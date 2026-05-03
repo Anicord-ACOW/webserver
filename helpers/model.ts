@@ -13,7 +13,7 @@ export abstract class Model {
 
   #id?: string | number;
 
-  constructor(table: string) {
+  protected constructor(table: string) {
     this.#table = table;
   }
 
