@@ -8,6 +8,15 @@ export const authOptions = {
             clientSecret: process.env.DISCORD_CLIENT_SECRET!,
         }),
     ],
+    callbacks: {
+        async session({ session, token, user }) {
+            // Send properties to the client, like an access_token from a provider.
+            if (session.user) {
+                session.user.id = token.sub;
+            }
+            return session;
+        }
+    },
 } satisfies NextAuthOptions;
 
 export function auth() {
