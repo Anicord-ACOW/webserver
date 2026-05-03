@@ -1,0 +1,32 @@
+import {Model, ModelNotFoundError} from "@/helpers/model";
+
+export class User extends Model {
+  username?: string;
+
+  constructor() {
+    super("users");
+  }
+
+  static async ensureDiscordUser(discordUserId: string, username?: string | null) {
+    const user = new User();
+
+    try {
+      await user.retrieve(discordUserId);
+    } catch (error) {
+      if (!(error instanceof ModelNotFoundError)) {
+        throw error;
+      }
+
+      user.username = username ?? undefined;
+      await user.persist(discordUserId);
+      return user;
+    }
+
+    if (username !== undefined && username !== null && user.username !== username) {
+      user.username = username;
+      await user.persist();
+    }
+
+    return user;
+  }
+}
