@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import {AuthButton} from "@/components/auth";
 
 export default async function Page() {
   const session = await auth()
@@ -8,6 +9,7 @@ export default async function Page() {
         <pre className="whitespace-pre-wrap break-all px-4 py-6">
           {JSON.stringify(session, null, 2)}
         </pre>
+        <AuthButton />
       </div>
   );
 }
