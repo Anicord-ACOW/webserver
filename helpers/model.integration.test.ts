@@ -139,7 +139,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     await stopMariaDb(server);
   }, 30_000);
 
-  it("persists and retrieves a model with an explicit string id", async () => {
+  it("persists, retrieves and deletes a model with an explicit string id", async () => {
     const { Model } = await import("@/helpers/model");
 
     class TestModel extends Model {
@@ -175,6 +175,12 @@ describeWithMariaDb("Model MariaDB integration", () => {
       id: "1500565799423840346",
       name: "Grace",
     });
+
+    // delete "Grace"
+    await updated.delete();
+
+    const deleted = new TestModel();
+    await expect(() => deleted.retrieve("1500565799423840346")).rejects.toThrow("Row not found in");
   }, 30_000);
 
   it("stores mysql insertId when persisting without an explicit id", async () => {
@@ -216,5 +222,11 @@ describeWithMariaDb("Model MariaDB integration", () => {
       id: 1,
       name: "Grace",
     });
+
+    // delete "Grace"
+    await updated.delete();
+
+    const deleted = new AutoModel();
+    await expect(() => deleted.retrieve("1500565799423840346")).rejects.toThrow("Row not found in");
   }, 30_000);
 });
