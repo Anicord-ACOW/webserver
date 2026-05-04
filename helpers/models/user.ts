@@ -1,7 +1,7 @@
 import {Model, ModelNotFoundError} from "@/helpers/model";
 
 export class User extends Model {
-  username?: string;
+  username: string = "";
 
   constructor() {
     super("users");
@@ -17,7 +17,8 @@ export class User extends Model {
         throw error;
       }
 
-      user.username = username ?? undefined;
+      // should always have a username in 2026 discord
+      user.username = username ?? "";
       await user.persist(discordUserId);
       return user;
     }

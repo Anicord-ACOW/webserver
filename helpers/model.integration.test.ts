@@ -133,7 +133,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     await connection.query("CREATE TABLE test_models (id VARCHAR(32) PRIMARY KEY, name VARCHAR(255) NULL)");
     await connection.query("CREATE TABLE auto_models (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NULL)");
 
-    await connection.query("CREATE TABLE parent_model (id VARCHAR(32) PRIMARY KEY, name VARCHAR(255) NULL, child__id INT NOT NULL, secondChild__id INT NOT NULL, thirdChild__id INT NULL)");
+    await connection.query("CREATE TABLE parent_model (id VARCHAR(32) PRIMARY KEY, name VARCHAR(255) NULL, child__id INT NULL, secondChild__id INT NULL, thirdChild__id INT NULL, friend__id INT NULL)");
     await connection.query("CREATE TABLE child_model (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NULL)");
     await connection.end();
   }, 60_000);
@@ -263,7 +263,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     const parent = new ParentModel();
     parent.name = "Ada";
     parent.child.name = "Grace";
-    expect(() => parent.persist("123")).rejects.toThrow("Related model child must be persisted first");
+    await expect(() => parent.persist("123")).rejects.toThrow("Related model child must be persisted first");
   }, 30_000);
 
   it("persists and retrieves a model with a relation", async () => {
@@ -271,9 +271,10 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
     class ParentModel extends Model {
       name: string = "";
-      child: ChildModel = new ChildModel();
-      secondChild: ChildModel = new ChildModel();
+      child: Nullable<ChildModel> = null;
+      secondChild: Nullable<ChildModel> = null;
       thirdChild: Nullable<ChildModel> = null;
+      friend: Nullable<ParentModel> = null;
 
       constructor() {
         super("parent_model");
@@ -284,6 +285,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
           child: ChildModel,
           secondChild: ChildModel,
           thirdChild: ChildModel,
+          friend: ParentModel,
         };
       }
     }
@@ -298,10 +300,15 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
     const parent = new ParentModel();
     parent.name = "Ada";
+    parent.child = new ChildModel();
     parent.child.name = "Grace";
+    parent.secondChild = new ChildModel();
     parent.secondChild.name = "John";
+    parent.friend = new ParentModel();
+    parent.friend.name = "Bob";
     await parent.child.persist();
     await parent.secondChild.persist();
+    await parent.friend.persist("999");
     await parent.persist("123");
 
     const retrievedParent = new ParentModel();
@@ -318,6 +325,14 @@ describeWithMariaDb("Model MariaDB integration", () => {
         name: "John",
       },
       thirdChild: null,
+      friend: {
+        id: "999",
+        name: "Bob",
+        child: null,
+        secondChild: null,
+        thirdChild: null,
+        friend: null,
+      },
     });
   });
 });
