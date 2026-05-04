@@ -125,8 +125,10 @@ export abstract class Model {
       .filter(key => this[key as keyof this] !== undefined);
     const vals = _cols.map(key => {
       if (relations[key]) {
+        const field = this[key as keyof this];
+        if (field === null) return null;
+        if (!(field instanceof Model)) throw new Error(`Relation ${key} must be a Model`);
         const model = this[key as keyof this] as Model;
-        if (model === null) return null;
         if (model.id === undefined) throw new TransientRelationError(key);
         return model.id;
       } else {
@@ -135,6 +137,8 @@ export abstract class Model {
     });
     // second pass - actual column names
     const cols = _cols.map(key => relations[key] ? `${key}${RELATION_SUFFIX}` : key);
+    // nothing to persist
+    if (cols.length === 0 && this.#id !== undefined) return;
 
     const db = await getDbConnection();
     try {
@@ -156,7 +160,8 @@ export abstract class Model {
       } else {
         // update the existing row
         const sql = `UPDATE \`${this.#table}\` SET ${cols.map(x => `\`${x}\` = ?`).join(", ")} WHERE \`id\` = ?`;
-        await db.query(sql, [...vals, this.#id]);
+        const [result] = await db.query<ResultSetHeader>(sql, [...vals, this.#id]);
+        if (result.affectedRows === 0) throw new Error("0 rows affected");
       }
     } finally {
       db.release();
@@ -169,6 +174,7 @@ export abstract class Model {
    */
   async retrieve(id: string | number) {
     const db = await getDbConnection();
+    this.#checkFieldNames();
     const relationEntries = Object.entries(this.#relations());
 
     // each referenced model gets a table alias, with t0 being the current model

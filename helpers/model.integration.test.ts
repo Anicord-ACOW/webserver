@@ -135,6 +135,8 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
     await connection.query("CREATE TABLE parent_model (id VARCHAR(32) PRIMARY KEY, name VARCHAR(255) NULL, child__id INT NULL, secondChild__id INT NULL, thirdChild__id INT NULL, friend__id INT NULL)");
     await connection.query("CREATE TABLE child_model (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NULL)");
+
+    await connection.query("CREATE TABLE empty_models (id INT AUTO_INCREMENT PRIMARY KEY)");
     await connection.end();
   }, 60_000);
 
@@ -231,7 +233,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     await updated.delete();
 
     const deleted = new AutoModel();
-    await expect(() => deleted.retrieve("1500565799423840346")).rejects.toThrow("Row not found in");
+    await expect(() => deleted.retrieve(1)).rejects.toThrow("Row not found in");
   }, 30_000);
 
   it("requires child to be persisted before parent", async () => {
@@ -266,7 +268,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     await expect(() => parent.persist("123")).rejects.toThrow("Related model child must be persisted first");
   }, 30_000);
 
-  it("persists and retrieves a model with a relation", async () => {
+  it("persists and retrieves a model with a relation without second layer hydration", async () => {
     const { Model } = await import("@/helpers/model");
 
     class ParentModel extends Model {
@@ -306,8 +308,11 @@ describeWithMariaDb("Model MariaDB integration", () => {
     parent.secondChild.name = "John";
     parent.friend = new ParentModel();
     parent.friend.name = "Bob";
+    parent.friend.child = new ChildModel();
+    parent.friend.child.name = "Solana";
     await parent.child.persist();
     await parent.secondChild.persist();
+    await parent.friend.child.persist();
     await parent.friend.persist("999");
     await parent.persist("123");
 
@@ -333,6 +338,20 @@ describeWithMariaDb("Model MariaDB integration", () => {
         thirdChild: null,
         friend: null,
       },
+    });
+
+    const retrievedFriend = new ParentModel();
+    await retrievedFriend.retrieve("999");
+    expect(retrievedFriend.toJSON()).toEqual({
+      id: "999",
+      name: "Bob",
+      child: {
+        id: 3,
+        name: "Solana",
+      },
+      secondChild: null,
+      thirdChild: null,
+      friend: null,
     });
   });
 
@@ -395,5 +414,90 @@ describeWithMariaDb("Model MariaDB integration", () => {
       id: "123123",
       name: "Ada",
     });
+  });
+
+  it("persisting empty models don't throw", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+      }
+    }
+
+    const emptyModel = new EmptyModel();
+    await emptyModel.persist();
+    expect(emptyModel.id).toBe(1);
+
+    const retrievedEmptyModel = new EmptyModel();
+    await retrievedEmptyModel.retrieve(1);
+    expect(retrievedEmptyModel.id).toBe(1);
+    await retrievedEmptyModel.persist();
+  });
+
+  it("invalid relations throw", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class ParentModel extends Model {
+      name: string = "";
+      child: ChildModel = new ChildModel();
+
+      constructor() {
+        super("parent_model");
+      }
+
+      protected relations(): Record<string, ModelClass> {
+        return {
+          children: ChildModel,
+        };
+      }
+    }
+
+    class ChildModel extends Model {
+      name: string = "";
+
+      constructor() {
+        super("child_model");
+      }
+    }
+
+    const parent = new ParentModel();
+    await expect(() => parent.persist("throw")).rejects.toThrow("Relation children is not defined in");
+  });
+
+  it("zero rows affected throws", async () => {
+    const { Model } = await import("@/helpers/model");
+    class ParentModel extends Model {
+      name: string = "";
+      child: Nullable<ChildModel> = null;
+
+      constructor() {
+        super("parent_model");
+      }
+
+      protected relations(): Record<string, ModelClass> {
+        return {
+          child: ChildModel,
+        };
+      }
+    }
+
+    class ChildModel extends Model {
+      name: string = "";
+
+      constructor() {
+        super("child_model");
+      }
+    }
+
+    const parent = new ParentModel();
+    await parent.persist("700");
+
+    const retrievedParent = new ParentModel();
+    await retrievedParent.retrieve("700");
+    await retrievedParent.delete();
+
+    parent.name = "Ada";
+    await expect(() => parent.persist()).rejects.toThrow("0 rows affected");
   });
 });
