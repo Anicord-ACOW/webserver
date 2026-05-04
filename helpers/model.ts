@@ -38,8 +38,8 @@ export abstract class Model {
     this.#table = table;
   }
 
-  #checkFieldNames() {
-    for (const key of Object.keys(this)) {
+  #checkFieldNames(keys = Object.keys(this)) {
+    for (const key of keys) {
       if (!VALID_IDENTIFIER_REGEX.test(key)) throw new Error(`Invalid field name: ${key}`);
       if (key.indexOf("__") !== -1) throw new Error(`Field name cannot contain "__": ${key}`);
     }
@@ -53,7 +53,7 @@ export abstract class Model {
     this.#checkFieldNames();
 
     // leave undefined columns out, but nulls will be persisted as is
-    const relations = this.relations();
+    const relations = this.#relations();
     // first pass - raw field names
     const _cols = Object.keys(this)
       .filter(key => key !== "#id" && key !== "#table")
@@ -104,7 +104,7 @@ export abstract class Model {
    */
   async retrieve(id: string | number) {
     const db = await getDbConnection();
-    const relationEntries = Object.entries(this.relations());
+    const relationEntries = Object.entries(this.#relations());
 
     // each referenced model gets a table alias, with t0 being the current model
     const mappingEntries: [string, X][] = [
@@ -114,11 +114,10 @@ export abstract class Model {
         {field, obj: new cls(), alias: `t${index + 1}`},
       ] as [string, X]),
     ];
-    const mapping: Record<string, X> = Object.fromEntries(mappingEntries);
 
     // we loop through all referenced models...
-    const select = mappingEntries.map(([alias, entry], index) => {
-      const modelRelations = entry.obj.relations();
+    const select = mappingEntries.map(([alias, entry]) => {
+      const modelRelations = entry.obj.#relations();
       // ... to look for fields we need to select
       return [
         // ... that includes the id
@@ -227,6 +226,14 @@ export abstract class Model {
       }
     }
     return this;
+  }
+
+  #relations(): Record<string, ModelClass> {
+    const relations = this.relations();
+    for (const key in relations) {
+      if (relations[key] === undefined || !Object.hasOwn(this, key)) throw new Error(`Relation ${key} is not defined in ${this.#table}`);
+    }
+    return relations;
   }
 
   protected relations(): Record<string, ModelClass> {
