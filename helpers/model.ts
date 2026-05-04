@@ -58,11 +58,9 @@ export abstract class Model {
     const _cols = Object.keys(this)
       .filter(key => key !== "#id" && key !== "#table")
       .filter(key => this[key as keyof this] !== undefined);
-    console.log(relations)
     const vals = _cols.map(key => {
       if (relations[key]) {
         const model = this[key as keyof this] as Model;
-        console.log(key, model);
         if (model === null) return null;
         if (model.id === undefined) throw new TransientRelationError(key);
         return model.id;
@@ -144,16 +142,13 @@ export abstract class Model {
       return `LEFT JOIN ${quote(rightTable)} ${alias} ON t0.${quote(`${field}${RELATION_SUFFIX}`)} = ${alias}.${quote("id")}`;
     })
       .join(" ")
-    console.log(select);
     try {
       const sql = `SELECT ${select} FROM ${quote(this.#table)} t0 ${joins} WHERE t0.${quote("id")} = ? LIMIT 1`;
-      console.log(sql);
       const [rows] = await db.query<RowDataPacket[]>(
         sql,
         [id],
       );
       const row = rows[0];
-      console.log("row", row);
 
       if (row === undefined) {
         throw new ModelNotFoundError(this.#table, id);
@@ -180,7 +175,6 @@ export abstract class Model {
           this[entry.field as keyof this] = entry.obj.#hydrate(groupedObjs[alias]);
         }
       }
-      console.log(this, this.toJSON());
     } finally {
       db.release();
     }
