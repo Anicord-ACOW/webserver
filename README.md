@@ -21,9 +21,15 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Environment Setup
-Create a Discord application at [https://discord.com/developers/applications](https://discord.com/developers/applications), go to the OAuth2 tab, then copy your client ID and secret. for `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` respectively.
+Take note of your deployment's URL. For local deployments, it will usually be http://localhost:3000.
+
+Create a Discord application at [https://discord.com/developers/applications](https://discord.com/developers/applications), go to the OAuth2 tab, then:
+- Copy your client ID and secret for `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` respectively.
+- Add `<deployment>/api/auth/callback/discord` as a redirect URI.
 
 Run `npx auth secret` to populate `NEXTAUTH_SECRET`.
+
+Set `NEXTAUTH_URL` to your deployment's URL.
 
 ## Learn More
 
