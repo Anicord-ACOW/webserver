@@ -500,4 +500,42 @@ describeWithMariaDb("Model MariaDB integration", () => {
     parent.name = "Ada";
     await expect(() => parent.persist()).rejects.toThrow("0 rows affected");
   });
+
+  it("deleted rows are really deleted, deleting again throws", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+      }
+    }
+
+    const model = new EmptyModel();
+    await model.persist(10);
+
+    const retrievedModel = new EmptyModel();
+    await retrievedModel.retrieve(10);
+
+    const replica = new EmptyModel();
+    await replica.retrieve(10);
+
+    await retrievedModel.delete();
+
+    const reRetrievedModel = new EmptyModel();
+    await expect(() => reRetrievedModel.retrieve(10)).rejects.toThrow("Row not found in");
+    await expect(() => replica.delete()).rejects.toThrow("0 rows affected");
+  });
+
+  it("deleting an unpersisted model does nothing", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+      }
+    }
+
+    const model = new EmptyModel();
+    await model.delete();
+  });
 });

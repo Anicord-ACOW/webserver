@@ -257,7 +257,8 @@ export abstract class Model {
     if (this.#id === undefined) return;
     const db = await getDbConnection();
     try {
-      await db.query(`DELETE FROM \`${this.#table}\` WHERE \`id\` = ?`, [this.#id]);
+      const [result] = await db.query<ResultSetHeader>(`DELETE FROM \`${this.#table}\` WHERE \`id\` = ?`, [this.#id]);
+      if (result.affectedRows === 0) throw new Error("0 rows affected");
       // reset the id to undefined since it doesn't exist in the database anymore'
       this.#id = undefined;
     } finally {

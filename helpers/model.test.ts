@@ -26,11 +26,27 @@ class InvalidTableModel extends Model {
   }
 }
 
+class InvalidTableModel2 extends Model {
+  name: string = "";
+
+  constructor() {
+    super("invalid__model");
+  }
+}
+
 class InvalidFieldModel extends Model {
   "`q": string = "";
 
   constructor() {
     super("looks_good");
+  }
+}
+
+class InvalidFieldModel2 extends Model {
+  "q__q": string = "";
+
+  constructor() {
+    super("also_looks_good");
   }
 }
 
@@ -47,6 +63,24 @@ class ParentModel extends Model {
   protected relations(): Record<string, ModelClass> {
     return {
       child: ChildModel,
+    };
+  }
+}
+
+class InvalidParentModel extends Model {
+  name: string = "";
+  age: Nullable<number> = null;
+  child: Nullable<ChildModel> = null;
+  ignoredField?: string;
+
+  constructor() {
+    super("parent_model");
+  }
+
+  protected relations(): Record<string, ModelClass> {
+    return {
+      child: ChildModel,
+      age: ChildModel,
     };
   }
 }
@@ -94,11 +128,18 @@ describe("Model", () => {
 
   it("invalid identifiers throws", async () => {
     expect(() => new InvalidTableModel()).toThrow("Invalid table name:");
+    expect(() => new InvalidTableModel2()).toThrow("Table name cannot contain \"__\"");
 
     const model = new InvalidFieldModel();
     model["`q"] = "Ada";
     await expect(() => model.persist()).rejects.toThrow("Invalid field name:");
     await expect(() => model.retrieve(1)).rejects.toThrow("Invalid field name:");
+
+    const model2 = new InvalidFieldModel2();
+    model2["q__q"] = "Ada";
+    await expect(() => model2.persist()).rejects.toThrow("Field name cannot contain \"__\"");
+    await expect(() => model2.retrieve(1)).rejects.toThrow("Field name cannot contain \"__\"");
+
   });
 
   it("correct join query", async () => {
@@ -110,5 +151,11 @@ describe("Model", () => {
       expect.stringContaining("SELECT t0.`id` as `t0__id`, t0.`name` as `t0__name`, t0.`age` as `t0__age`, t1.`id` as `t1__id`, t1.`name` as `t1__name` FROM `parent_model` t0 LEFT JOIN `child_model` t1 ON t0.`child__id` = t1.`id` WHERE t0.`id` = ? LIMIT 1"),
       ["123"],
     );
+  });
+
+  it("relations must point to a valid model", async () => {
+    const model = new InvalidParentModel();
+    model.age = 2;
+    await expect(() => model.persist("123")).rejects.toThrow("Relation age must be a Model");
   });
 });
