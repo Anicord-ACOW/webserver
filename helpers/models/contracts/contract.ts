@@ -3,7 +3,7 @@ import {Model} from "@/helpers/model";
 /**
  * Represents a contract that a participant must complete to obtain a pass.
  */
-class Contract extends Model {
+export class Contract extends Model {
   seasonId: number = 0;
 
   contractorId: string = "";
