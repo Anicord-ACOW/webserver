@@ -1,6 +1,8 @@
 import {getDbConnection} from "@/helpers/db";
 import {ResultSetHeader, RowDataPacket} from "mysql2";
 
+const VALID_IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
 export class ModelNotFoundError extends Error {
   constructor(table: string, id: string | number) {
     super(`Row not found in ${table} for id ${id}`);
@@ -14,6 +16,11 @@ export abstract class Model {
   #id?: string | number;
 
   protected constructor(table: string) {
+    if (!VALID_IDENTIFIER_REGEX.test(table)) throw new Error(`Invalid table name: ${table}`);
+    // check field names
+    for (const key of Object.keys(this)) {
+      if (!VALID_IDENTIFIER_REGEX.test(key)) throw new Error(`Invalid field name: ${key}`);
+    }
     this.#table = table;
   }
 
