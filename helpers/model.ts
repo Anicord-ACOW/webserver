@@ -17,11 +17,13 @@ export abstract class Model {
 
   protected constructor(table: string) {
     if (!VALID_IDENTIFIER_REGEX.test(table)) throw new Error(`Invalid table name: ${table}`);
-    // check field names
+    this.#table = table;
+  }
+
+  #checkFieldNames() {
     for (const key of Object.keys(this)) {
       if (!VALID_IDENTIFIER_REGEX.test(key)) throw new Error(`Invalid field name: ${key}`);
     }
-    this.#table = table;
   }
 
   /**
@@ -29,6 +31,7 @@ export abstract class Model {
    * @param id explicitly specify the row's id, otherwise use the db generated id
    */
   async persist(id?: string | number) {
+    this.#checkFieldNames();
     // leave undefined columns out, but nulls will be persisted as is
     const cols = Object.keys(this)
       .filter(key => key !== "#id" && key !== "#table")

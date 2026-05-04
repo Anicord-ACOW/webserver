@@ -17,6 +17,22 @@ class TestModel extends Model {
   }
 }
 
+class InvalidTableModel extends Model {
+  "`q"?: string;
+
+  constructor() {
+    super("`invalid");
+  }
+}
+
+class InvalidFieldModel extends Model {
+  "`q"?: string;
+
+  constructor() {
+    super("looks_good");
+  }
+}
+
 describe("Model", () => {
   it("persists with an explicit id", async () => {
     query.mockResolvedValueOnce([{ affectedRows: 1 }, []]);
@@ -44,5 +60,13 @@ describe("Model", () => {
     expect(model.id).toBe("123");
     expect(model.name).toBe("Ada");
     expect(model.toJSON()).toEqual({ id: "123", name: "Ada" });
+  });
+
+  it("invalid identifiers throws", async () => {
+    expect(() => new InvalidTableModel()).toThrow("Invalid table name:");
+
+    const model = new InvalidFieldModel();
+    model["`q"] = "Ada";
+    await expect(() => model.persist()).rejects.toThrow("Invalid field name:");
   });
 });
