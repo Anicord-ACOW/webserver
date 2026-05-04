@@ -335,4 +335,65 @@ describeWithMariaDb("Model MariaDB integration", () => {
       },
     });
   });
+
+  it("models don't populate other fields when retrieving", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class ParentModel extends Model {
+      name: string = "";
+      child: Nullable<ChildModel> = null;
+      secondChild: Nullable<ChildModel> = null;
+      thirdChild: Nullable<ChildModel> = null;
+      friend: Nullable<ParentModel> = null;
+
+      constructor() {
+        super("parent_model");
+      }
+
+      protected relations(): Record<string, ModelClass> {
+        return {
+          child: ChildModel,
+          secondChild: ChildModel,
+          thirdChild: ChildModel,
+          friend: ParentModel,
+        };
+      }
+    }
+
+    class ChildModel extends Model {
+      name: string = "";
+
+      constructor() {
+        super("child_model");
+      }
+    }
+
+    class RestrictedParentModel extends Model {
+      name: string = "";
+
+      constructor() {
+        super("parent_model");
+      }
+    }
+
+    const parent = new ParentModel();
+    parent.name = "Ada";
+    parent.child = new ChildModel();
+    parent.child.name = "Grace";
+    parent.secondChild = new ChildModel();
+    parent.secondChild.name = "John";
+    parent.friend = new ParentModel();
+    parent.friend.name = "Bob";
+    await parent.child.persist();
+    await parent.secondChild.persist();
+    await parent.friend.persist("999999");
+    await parent.persist("123123");
+
+    const retrievedParent = new RestrictedParentModel();
+    await retrievedParent.retrieve("123123");
+    expect(retrievedParent.toJSON()).toEqual({
+      id: "123123",
+      name: "Ada",
+    });
+  });
 });

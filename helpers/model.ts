@@ -27,6 +27,61 @@ function quote(str: string) {
   return `\`${str}\``;
 }
 
+/**
+ * Represents a database model.
+ * A model is an object with an immutable id that can optionally contain other models in some of its fields for up to
+ * 1 layer of nesting.
+ *
+ * Example:
+ * ```ts
+ * class User extends Model {
+ *   name: string = "";
+ *   age: number = 0;
+ *   profile: Profile = new Profile();
+ *
+ *   constructor() {
+ *     super("users");
+ *   }
+ *
+ *   protected relations(): Record<string, ModelClass> {
+ *     return {
+ *       profile: Profile,
+ *     };
+ *   }
+ * }
+ * ```
+ * Note that all relations must be defined in the relations() method.
+ *
+ * Different models referencing the same table are allowed. The model below will only have its `name` field populated.
+ * Users may find this useful to restrict the fields exposed.
+ *
+ * ```ts
+ * class ApiUser extends Model {
+ *   name: string = "";
+ *
+ *   constructor() {
+ *     super("users");
+ *   }
+ * }
+ * ```
+ *
+ * Retrieving the user from the database will return a User object with the name and age fields populated,
+ * and the profile field will be a Profile object. However, the profile's submodels will not be populated
+ * due to being end 2nd layer.
+ *
+ * Call persist() to persist the model to the database. Child models must be persisted before the parent model.
+ * Call delete() to delete the model from the database.
+ *
+ * Note that this class doesn't verify/enforce any database constraints nor create/alter any tables.
+ * Constraint violations will be thrown by the database driver.
+ *
+ * In the eyes of this class, fields with `undefined` values are treated as nonexistent.
+ *
+ * Identifiers must contain only alphanumeric characters and underscores, cannot start with a digit,
+ * and cannot contain double underscores. Field names with double underscores are reserved for internal use.
+ *
+ * @param table the name of the table this model is stored in
+ */
 export abstract class Model {
   readonly #table: string;
 
