@@ -49,6 +49,16 @@ function quote(str: string) {
  *     };
  *   }
  * }
+ *
+ * // Profile class omitted
+ *
+ * const user = new User();
+ * user.name = "Ada";
+ * user.age = 25;
+ * user.profile.bio = "I travel distances";
+ * user.profile.location = "Proxima Centauri";
+ * await user.profile.persist();
+ * await user.persist();
  * ```
  * Note that all relations must be defined in the relations() method.
  *
