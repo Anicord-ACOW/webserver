@@ -6,6 +6,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { createConnection } from "mysql2/promise";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {ModelClass, Nullable} from "@/helpers/model";
 
 const execFileAsync = promisify(execFile);
 
@@ -131,6 +132,9 @@ describeWithMariaDb("Model MariaDB integration", () => {
     });
     await connection.query("CREATE TABLE test_models (id VARCHAR(32) PRIMARY KEY, name VARCHAR(255) NULL)");
     await connection.query("CREATE TABLE auto_models (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NULL)");
+
+    await connection.query("CREATE TABLE parent_model (id VARCHAR(32) PRIMARY KEY, name VARCHAR(255) NULL, child__id INT NOT NULL, secondChild__id INT NOT NULL, thirdChild__id INT NULL)");
+    await connection.query("CREATE TABLE child_model (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NULL)");
     await connection.end();
   }, 60_000);
 
@@ -143,7 +147,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     const { Model } = await import("@/helpers/model");
 
     class TestModel extends Model {
-      name?: string;
+      name: string = "";
 
       constructor() {
         super("test_models");
@@ -187,7 +191,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     const { Model } = await import("@/helpers/model");
 
     class AutoModel extends Model {
-      name?: string;
+      name: string = "";
 
       constructor() {
         super("auto_models");
@@ -229,4 +233,91 @@ describeWithMariaDb("Model MariaDB integration", () => {
     const deleted = new AutoModel();
     await expect(() => deleted.retrieve("1500565799423840346")).rejects.toThrow("Row not found in");
   }, 30_000);
+
+  it("requires child to be persisted before parent", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class ParentModel extends Model {
+      name: string = "";
+      child: ChildModel = new ChildModel();
+
+      constructor() {
+        super("parent_model");
+      }
+
+      protected relations(): Record<string, ModelClass> {
+        return {
+          child: ChildModel,
+        };
+      }
+    }
+
+    class ChildModel extends Model {
+      name: string = "";
+
+      constructor() {
+        super("child_model");
+      }
+    }
+
+    const parent = new ParentModel();
+    parent.name = "Ada";
+    parent.child.name = "Grace";
+    expect(() => parent.persist("123")).rejects.toThrow("Related model child must be persisted first");
+  }, 30_000);
+
+  it("persists and retrieves a model with a relation", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class ParentModel extends Model {
+      name: string = "";
+      child: ChildModel = new ChildModel();
+      secondChild: ChildModel = new ChildModel();
+      thirdChild: Nullable<ChildModel> = null;
+
+      constructor() {
+        super("parent_model");
+      }
+
+      protected relations(): Record<string, ModelClass> {
+        return {
+          child: ChildModel,
+          secondChild: ChildModel,
+          thirdChild: ChildModel,
+        };
+      }
+    }
+
+    class ChildModel extends Model {
+      name: string = "";
+
+      constructor() {
+        super("child_model");
+      }
+    }
+
+    const parent = new ParentModel();
+    parent.name = "Ada";
+    parent.child.name = "Grace";
+    parent.secondChild.name = "John";
+    await parent.child.persist();
+    await parent.secondChild.persist();
+    await parent.persist("123");
+
+    const retrievedParent = new ParentModel();
+    await retrievedParent.retrieve("123");
+    expect(retrievedParent.toJSON()).toEqual({
+      id: "123",
+      name: "Ada",
+      child: {
+        id: 1,
+        name: "Grace",
+      },
+      secondChild: {
+        id: 2,
+        name: "John",
+      },
+      thirdChild: null,
+    });
+  });
 });

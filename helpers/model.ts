@@ -2,12 +2,29 @@ import {getDbConnection} from "@/helpers/db";
 import {ResultSetHeader, RowDataPacket} from "mysql2";
 
 const VALID_IDENTIFIER_REGEX = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+const RELATION_SUFFIX = "__id";
+
+export type ModelClass<T extends Model = Model> = new () => T;
+export type Nullable<T> = T | null;
+
+interface X {field: string | null, obj: Model, alias: string}
 
 export class ModelNotFoundError extends Error {
   constructor(table: string, id: string | number) {
     super(`Row not found in ${table} for id ${id}`);
     this.name = "ModelNotFoundError";
   }
+}
+
+export class TransientRelationError extends Error {
+  constructor(relation: string) {
+    super(`Related model ${relation} must be persisted first`);
+    this.name = "TransientRelationError";
+  }
+}
+
+function quote(str: string) {
+  return `\`${str}\``;
 }
 
 export abstract class Model {
@@ -17,12 +34,14 @@ export abstract class Model {
 
   protected constructor(table: string) {
     if (!VALID_IDENTIFIER_REGEX.test(table)) throw new Error(`Invalid table name: ${table}`);
+    if (table.indexOf("__") !== -1) throw new Error(`Table name cannot contain "__": ${table}`);
     this.#table = table;
   }
 
   #checkFieldNames() {
     for (const key of Object.keys(this)) {
       if (!VALID_IDENTIFIER_REGEX.test(key)) throw new Error(`Invalid field name: ${key}`);
+      if (key.indexOf("__") !== -1) throw new Error(`Field name cannot contain "__": ${key}`);
     }
   }
 
@@ -32,10 +51,28 @@ export abstract class Model {
    */
   async persist(id?: string | number) {
     this.#checkFieldNames();
+
     // leave undefined columns out, but nulls will be persisted as is
-    const cols = Object.keys(this)
+    const relations = this.relations();
+    // first pass - raw field names
+    const _cols = Object.keys(this)
       .filter(key => key !== "#id" && key !== "#table")
       .filter(key => this[key as keyof this] !== undefined);
+    console.log(relations)
+    const vals = _cols.map(key => {
+      if (relations[key]) {
+        const model = this[key as keyof this] as Model;
+        console.log(key, model);
+        if (model === null) return null;
+        if (model.id === undefined) throw new TransientRelationError(key);
+        return model.id;
+      } else {
+        return this[key as keyof this];
+      }
+    });
+    // second pass - actual column names
+    const cols = _cols.map(key => relations[key] ? `${key}${RELATION_SUFFIX}` : key);
+
     const db = await getDbConnection();
     try {
       if (this.#id === undefined) {
@@ -44,19 +81,19 @@ export abstract class Model {
           const columnSql = ["`id`", ...cols.map(x => `\`${x}\``)].join(", ");
           const valueSql = ["?", ...cols.map(() => "?")].join(", ");
           const sql = `INSERT INTO \`${this.#table}\` (${columnSql}) VALUES (${valueSql})`;
-          await db.query<ResultSetHeader>(sql, [id, ...cols.map(x => this[x as keyof this])]);
+          await db.query<ResultSetHeader>(sql, [id, ...vals]);
           this.#id = id;
         } else {
           // let the db generate the id, this will throw if there's no mechanism to generate an id
           const sql = `INSERT INTO \`${this.#table}\` (${cols.map(x => `\`${x}\``).join(", ")})
                        VALUES (${cols.map(() => "?").join(", ")})`;
-          const [result] = await db.query<ResultSetHeader>(sql, cols.map(x => this[x as keyof this]));
+          const [result] = await db.query<ResultSetHeader>(sql, vals);
           this.#id = result.insertId;
         }
       } else {
         // update the existing row
         const sql = `UPDATE \`${this.#table}\` SET ${cols.map(x => `\`${x}\` = ?`).join(", ")} WHERE \`id\` = ?`;
-        await db.query(sql, [...cols.map(x => this[x as keyof this]), this.#id]);
+        await db.query(sql, [...vals, this.#id]);
       }
     } finally {
       db.release();
@@ -69,23 +106,81 @@ export abstract class Model {
    */
   async retrieve(id: string | number) {
     const db = await getDbConnection();
+    const relationEntries = Object.entries(this.relations());
+
+    // each referenced model gets a table alias, with t0 being the current model
+    const mappingEntries: [string, X][] = [
+      ["t0", {field: null as string | null, obj: this as Model, alias: "t0"}],
+      ...relationEntries.map(([field, cls], index) => [
+        `t${index + 1}`,
+        {field, obj: new cls(), alias: `t${index + 1}`},
+      ] as [string, X]),
+    ];
+    const mapping: Record<string, X> = Object.fromEntries(mappingEntries);
+
+    // we loop through all referenced models...
+    const select = mappingEntries.map(([alias, entry], index) => {
+      const modelRelations = entry.obj.relations();
+      // ... to look for fields we need to select
+      return [
+        // ... that includes the id
+        "id",
+        // ... as well as all the actual fields of the model
+        ...Object.keys(entry.obj).filter(x => !(x in modelRelations) && !(x === "#id" || x === "#table")),
+      ]
+        // ... then bundle them into unique column aliases
+        .map(field => `${alias}.\`${field}\` as ${quote(`${alias}__${field}`)}`)
+        // ... make it sql-ish
+        .join(", ");
+    })
+      // and combine everything into the column list
+      .join(", ");
+
+    // to hydrate the child models we need to join the tables
+    const joins = mappingEntries.slice(1).map(([alias, entry]) => {
+      const {field, obj} = entry;
+      const rightTable = obj.#table;
+      // left join the referenced model's table, using the alias as the join condition, on field=id
+      return `LEFT JOIN ${quote(rightTable)} ${alias} ON t0.${quote(`${field}${RELATION_SUFFIX}`)} = ${alias}.${quote("id")}`;
+    })
+      .join(" ")
+    console.log(select);
     try {
+      const sql = `SELECT ${select} FROM ${quote(this.#table)} t0 ${joins} WHERE t0.${quote("id")} = ? LIMIT 1`;
+      console.log(sql);
       const [rows] = await db.query<RowDataPacket[]>(
-        `SELECT * FROM \`${this.#table}\` WHERE \`id\` = ? LIMIT 1`,
+        sql,
         [id],
       );
       const row = rows[0];
+      console.log("row", row);
 
       if (row === undefined) {
         throw new ModelNotFoundError(this.#table, id);
       }
 
+      // group the returned columns by table alias, we'll then have objects that aligns with the models
+      const groupedObjs: Record<string, Record<string, unknown>> = {};
       for (const [key, value] of Object.entries(row)) {
-        if (key !== "id") {
-          (this as Record<string, unknown>)[key] = value;
+        const [alias, field] = key.split("__");
+        groupedObjs[alias] ??= {};
+        groupedObjs[alias][field] = value;
+      }
+
+      // deal with t0 (this)
+      this.#hydrate(groupedObjs.t0);
+      for (const [alias, entry] of mappingEntries.slice(1)) {
+        if (groupedObjs[alias] === undefined) continue; // shouldn't happen
+        if (entry.field === null) continue; // also shouldn't happen since this isn't t0
+        if (groupedObjs[alias].id === null) {
+          // @ts-expect-error controlled hydration. null id = null row
+          this[entry.field as keyof this] = null;
+        } else {
+          // @ts-expect-error controlled hydration.
+          this[entry.field as keyof this] = entry.obj.#hydrate(groupedObjs[alias]);
         }
       }
-      this.#id = id;
+      console.log(this, this.toJSON());
     } finally {
       db.release();
     }
@@ -111,9 +206,36 @@ export abstract class Model {
   }
 
   toJSON() {
-    return {
-      ...Object.fromEntries(Object.entries(this)),
+    // @eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const o: Record<string, unknown> = {
       id: this.#id,
     };
+    for (const key of Object.keys(this)) {
+      if (key !== "#id" && key !== "#table") {
+        const v = this[key as keyof this];
+        if (v instanceof Model) {
+          o[key] = v.toJSON();
+        } else {
+          o[key] = v;
+        }
+      }
+    }
+    return o;
+  }
+
+  #hydrate(obj: Record<string, unknown>) {
+    for (const key in obj) {
+      if (key === "id") {
+        this.#id = obj[key] as string | number;
+      } else {
+        // @ts-expect-error controlled hydration
+        this[key as keyof this] = obj[key];
+      }
+    }
+    return this;
+  }
+
+  protected relations(): Record<string, ModelClass> {
+    return {};
   }
 }

@@ -7,7 +7,7 @@ vi.mock("@/helpers/db", () => ({
   getDbConnection: async () => ({ query, release }),
 }));
 
-import { Model } from "@/helpers/model";
+import {Model, ModelClass} from "@/helpers/model";
 
 class TestModel extends Model {
   name?: string;
@@ -18,7 +18,7 @@ class TestModel extends Model {
 }
 
 class InvalidTableModel extends Model {
-  "`q"?: string;
+  "`q": string = "";
 
   constructor() {
     super("`invalid");
@@ -26,10 +26,33 @@ class InvalidTableModel extends Model {
 }
 
 class InvalidFieldModel extends Model {
-  "`q"?: string;
+  "`q": string = "";
 
   constructor() {
     super("looks_good");
+  }
+}
+
+class ParentModel extends Model {
+  name: string = "";
+  child: ChildModel = new ChildModel();
+
+  constructor() {
+    super("parent_model");
+  }
+
+  protected relations(): Record<string, ModelClass> {
+    return {
+      child: ChildModel,
+    };
+  }
+}
+
+class ChildModel extends Model {
+  name: string = "";
+
+  constructor() {
+    super("child_model");
   }
 }
 
@@ -52,7 +75,7 @@ describe("Model", () => {
   });
 
   it("hydrates from retrieve", async () => {
-    query.mockResolvedValueOnce([[{ id: "123", name: "Ada" }], []]);
+    query.mockResolvedValueOnce([[{ t0__id: "123", t0__name: "Ada" }], []]);
 
     const model = new TestModel();
     await model.retrieve("123");
@@ -68,5 +91,16 @@ describe("Model", () => {
     const model = new InvalidFieldModel();
     model["`q"] = "Ada";
     await expect(() => model.persist()).rejects.toThrow("Invalid field name:");
+  });
+
+  it("correct join query", async () => {
+    query.mockResolvedValueOnce([[{ parent_model__id: "123", parent_model__name: "Ada", child_model__id: 1, child_model__name: "Grace" }], []]);
+
+    const parent = new ParentModel();
+    await parent.retrieve("123");
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining("SELECT t0.`id` as `t0__id`, t0.`name` as `t0__name`, t1.`id` as `t1__id`, t1.`name` as `t1__name` FROM `parent_model` t0 LEFT JOIN `child_model` t1 ON t0.`child__id` = t1.`id` WHERE t0.`id` = ? LIMIT 1"),
+      ["123"],
+    );
   });
 });
