@@ -276,13 +276,11 @@ export abstract class Model {
       id: this.#id,
     };
     for (const key of Object.keys(this)) {
-      if (key !== "#id" && key !== "#table") {
-        const v = this[key as keyof this];
-        if (v instanceof Model) {
-          o[key] = v.toJSON();
-        } else {
-          o[key] = v;
-        }
+      const v = this[key as keyof this];
+      if (v instanceof Model) {
+        o[key] = v.toJSON();
+      } else {
+        o[key] = v;
       }
     }
     return o;
