@@ -558,4 +558,23 @@ describeWithMariaDb("Model MariaDB integration", () => {
     const retrievedModel = new EmptyModel();
     expect(() => retrievedModel.retrieve(20)).rejects.toThrow("Row not found in");
   });
+
+  it("toJSON ignores forcibly set id", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+      }
+    }
+
+    const model = new EmptyModel();
+    await model.persist(11);
+
+    // (model as {id: number}).id = 20;
+    Object.defineProperty(model, "id", { value: 20, writable: true, enumerable: true });
+    await model.persist();
+
+    expect(model.toJSON()).toEqual({id: 11});
+  })
 });

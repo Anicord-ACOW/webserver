@@ -129,8 +129,8 @@ export abstract class Model {
         if (field === null) return null;
         if (!(field instanceof Model)) throw new Error(`Relation ${key} must be a Model`);
         const model = this[key as keyof this] as Model;
-        if (model.id === undefined) throw new TransientRelationError(key);
-        return model.id;
+        if (model.#id === undefined) throw new TransientRelationError(key);
+        return model.#id;
       } else {
         return this[key as keyof this];
       }
@@ -173,7 +173,6 @@ export abstract class Model {
    * @param id the id of the row to retrieve
    */
   async retrieve(id: string | number) {
-    const db = await getDbConnection();
     this.#checkFieldNames();
     const relationEntries = Object.entries(this.#relations());
 
@@ -194,7 +193,7 @@ export abstract class Model {
         // ... that includes the id
         "id",
         // ... as well as all the actual fields of the model
-        ...Object.keys(entry.obj).filter(x => !(x in modelRelations) && !(x === "#id" || x === "#table")),
+        ...Object.keys(entry.obj).filter(x => !Object.hasOwn(modelRelations, x) && !(x === "#id" || x === "#table")),
       ]
         // ... then bundle them into unique column aliases
         .map(field => `${alias}.\`${field}\` as ${quote(`${alias}__${field}`)}`)
@@ -212,6 +211,8 @@ export abstract class Model {
       return `LEFT JOIN ${quote(rightTable)} ${alias} ON t0.${quote(`${field}${RELATION_SUFFIX}`)} = ${alias}.${quote("id")}`;
     })
       .join(" ")
+
+    const db = await getDbConnection();
     try {
       const sql = `SELECT ${select} FROM ${quote(this.#table)} t0 ${joins} WHERE t0.${quote("id")} = ? LIMIT 1`;
       const [rows] = await db.query<RowDataPacket[]>(
@@ -276,6 +277,7 @@ export abstract class Model {
       id: this.#id,
     };
     for (const key of Object.keys(this)) {
+      if (key === "id") continue;
       const v = this[key as keyof this];
       if (v instanceof Model) {
         o[key] = v.toJSON();
