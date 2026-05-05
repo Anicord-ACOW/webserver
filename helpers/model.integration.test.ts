@@ -538,4 +538,24 @@ describeWithMariaDb("Model MariaDB integration", () => {
     const model = new EmptyModel();
     await model.delete();
   });
+
+  it("attempts to override an existing record's id has no effect", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+      }
+    }
+
+    const model = new EmptyModel();
+    await model.persist(10);
+
+    // (model as {id: number}).id = 20;
+    Object.defineProperty(model, "id", { value: 20, writable: true });
+    await model.persist();
+
+    const retrievedModel = new EmptyModel();
+    expect(() => retrievedModel.retrieve(20)).rejects.toThrow("Row not found in");
+  });
 });
