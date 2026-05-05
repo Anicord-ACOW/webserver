@@ -121,7 +121,7 @@ export abstract class Model {
     const relations = this.#relations();
     // first pass - raw field names
     const _cols = Object.keys(this)
-      .filter(key => key !== "#id" && key !== "#table")
+      .filter(key => key != "id" && key !== "#id" && key !== "#table")
       .filter(key => this[key as keyof this] !== undefined);
     const vals = _cols.map(key => {
       if (relations[key]) {
