@@ -10,11 +10,12 @@ vi.mock("@/helpers/db", () => ({
 import {Model, ModelClass, Nullable} from "@/helpers/model";
 
 class TestModel extends Model {
-  name?: string;
+  name: string = "";
   age: Nullable<number> = null;
 
   constructor() {
     super("test_models");
+    this.seal();
   }
 }
 
@@ -31,6 +32,7 @@ class InvalidTableModel2 extends Model {
 
   constructor() {
     super("invalid__model");
+    this.seal();
   }
 }
 
@@ -39,6 +41,7 @@ class InvalidFieldModel extends Model {
 
   constructor() {
     super("looks_good");
+    this.seal();
   }
 }
 
@@ -47,6 +50,7 @@ class InvalidFieldModel2 extends Model {
 
   constructor() {
     super("also_looks_good");
+    this.seal();
   }
 }
 
@@ -58,6 +62,7 @@ class ParentModel extends Model {
 
   constructor() {
     super("parent_model");
+    this.seal();
   }
 
   protected relations(): Record<string, ModelClass> {
@@ -75,6 +80,7 @@ class InvalidParentModel extends Model {
 
   constructor() {
     super("parent_model");
+    this.seal();
   }
 
   protected relations(): Record<string, ModelClass> {
@@ -90,6 +96,7 @@ class ChildModel extends Model {
 
   constructor() {
     super("child_model");
+    this.seal();
   }
 }
 
@@ -107,8 +114,8 @@ describe("Model", () => {
     await model.persist("123");
 
     expect(query).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO `test_models` (`id`, `age`, `name`) VALUES"),
-      ["123", null, "Ada"],
+      expect.stringContaining("INSERT INTO `test_models` (`id`, `name`, `age`) VALUES"),
+      ["123", "Ada", null],
     );
     expect(model.id).toBe("123");
     expect(JSON.stringify(model)).toContain('"id":"123"');
@@ -130,15 +137,9 @@ describe("Model", () => {
     expect(() => new InvalidTableModel()).toThrow("Invalid table name:");
     expect(() => new InvalidTableModel2()).toThrow("Table name cannot contain \"__\"");
 
-    const model = new InvalidFieldModel();
-    model["`q"] = "Ada";
-    await expect(() => model.persist()).rejects.toThrow("Invalid field name:");
-    await expect(() => model.retrieve(1)).rejects.toThrow("Invalid field name:");
+    expect(() => new InvalidFieldModel()).toThrow("Invalid field name:");
 
-    const model2 = new InvalidFieldModel2();
-    model2["q__q"] = "Ada";
-    await expect(() => model2.persist()).rejects.toThrow("Field name cannot contain \"__\"");
-    await expect(() => model2.retrieve(1)).rejects.toThrow("Field name cannot contain \"__\"");
+    expect(() => new InvalidFieldModel2()).toThrow("Field name cannot contain \"__\"");
 
   });
 

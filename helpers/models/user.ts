@@ -5,6 +5,7 @@ export class User extends Model {
 
   constructor() {
     super("users");
+    this.seal();
   }
 
   static async ensureDiscordUser(discordUserId: string, username?: string | null) {

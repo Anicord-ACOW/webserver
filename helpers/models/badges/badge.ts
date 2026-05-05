@@ -12,5 +12,6 @@ export class Badge extends Model {
 
   constructor() {
     super("badges");
+    this.seal();
   }
 }

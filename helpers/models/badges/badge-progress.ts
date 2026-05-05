@@ -10,6 +10,11 @@ export class BadgeProgress extends Model {
   badge: Badge = new Badge();
   progress: number = 0;
 
+  protected constructor() {
+    super("badge_progress");
+    this.seal();
+  }
+
   protected relations(): Record<string, ModelClass> {
     return {
       user: User,

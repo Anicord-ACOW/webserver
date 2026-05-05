@@ -31,6 +31,9 @@ function quote(str: string) {
  * Represents a database model.
  * A model is an object with an immutable id that can optionally contain other models in some of its fields for up to
  * 1 layer of nesting.
+ * Models must be sealed before use to prevent tampering. Models must also not include optional fields,
+ * use Nullable<T> instead.
+ * Attempts to set an optional field (that is, equivalent to adding a field to the object), will throw an error.
  *
  * Example:
  * ```ts
@@ -41,6 +44,7 @@ function quote(str: string) {
  *
  *   constructor() {
  *     super("users");
+ *     this.seal();
  *   }
  *
  *   protected relations(): Record<string, ModelClass> {
@@ -96,6 +100,9 @@ export abstract class Model {
   readonly #table: string;
 
   #id?: string | number;
+  #fields = new Set<string>();
+  #isSealed = false;
+  #relations: Record<string, ModelClass> = {};
 
   protected constructor(table: string) {
     if (!VALID_IDENTIFIER_REGEX.test(table)) throw new Error(`Invalid table name: ${table}`);
@@ -103,11 +110,29 @@ export abstract class Model {
     this.#table = table;
   }
 
-  #checkFieldNames(keys = Object.keys(this)) {
+  protected seal() {
+    this.#fields = new Set(Object.keys(this));
+    this.#checkFieldNames();
+    const relations = this.relations();
+    for (const [key, value] of Object.entries(relations)) {
+      if (value === undefined || !Object.hasOwn(this, key)) throw new Error(`Relation ${key} is not defined in ${this.#table}`);
+    }
+    this.#relations = relations;
+    Object.seal(this);
+    Object.freeze(Object.getPrototypeOf(this));
+    this.#isSealed = true;
+  }
+
+  #checkFieldNames(keys = this.#fields) {
     for (const key of keys) {
+      if (key === "id") throw new Error("Field name 'id' is reserved");
       if (!VALID_IDENTIFIER_REGEX.test(key)) throw new Error(`Invalid field name: ${key}`);
       if (key.indexOf("__") !== -1) throw new Error(`Field name cannot contain "__": ${key}`);
     }
+  }
+
+  #checkSealed() {
+    if (!this.#isSealed) throw new Error("Model must be sealed before use");
   }
 
   /**
@@ -116,11 +141,16 @@ export abstract class Model {
    */
   async persist(id?: string | number) {
     this.#checkFieldNames();
+    this.#checkSealed();
+
+    if (!Number.isInteger(id) && "string" !== typeof id && id !== undefined) throw new Error(
+      `id must be a number or a string, got ${typeof id}`
+    );
 
     // leave undefined columns out, but nulls will be persisted as is
-    const relations = this.#relations();
+    const relations = this.#relations;
     // first pass - raw field names
-    const _cols = Object.keys(this)
+    const _cols = [...this.#fields]
       .filter(key => key != "id" && key !== "#id" && key !== "#table")
       .filter(key => this[key as keyof this] !== undefined);
     const vals = _cols.map(key => {
@@ -174,7 +204,8 @@ export abstract class Model {
    */
   async retrieve(id: string | number) {
     this.#checkFieldNames();
-    const relationEntries = Object.entries(this.#relations());
+    this.#checkSealed();
+    const relationEntries = Object.entries(this.#relations);
 
     // each referenced model gets a table alias, with t0 being the current model
     const mappingEntries: [string, X][] = [
@@ -187,13 +218,13 @@ export abstract class Model {
 
     // we loop through all referenced models...
     const select = mappingEntries.map(([alias, entry]) => {
-      const modelRelations = entry.obj.#relations();
+      const modelRelations = entry.obj.#relations;
       // ... to look for fields we need to select
       return [
         // ... that includes the id
         "id",
         // ... as well as all the actual fields of the model
-        ...Object.keys(entry.obj).filter(x => !Object.hasOwn(modelRelations, x) && !(x === "#id" || x === "#table")),
+        ...[...entry.obj.#fields].filter(x => !Object.hasOwn(modelRelations, x) && !(x === "#id" || x === "#table")),
       ]
         // ... then bundle them into unique column aliases
         .map(field => `${alias}.\`${field}\` as ${quote(`${alias}__${field}`)}`)
@@ -255,6 +286,7 @@ export abstract class Model {
    * Deletes the model from the database.
    */
   async delete() {
+    this.#checkSealed();
     if (this.#id === undefined) return;
     const db = await getDbConnection();
     try {
@@ -276,7 +308,7 @@ export abstract class Model {
     const o: Record<string, unknown> = {
       id: this.#id,
     };
-    for (const key of Object.keys(this)) {
+    for (const key of this.#fields) {
       if (key === "id") continue;
       const v = this[key as keyof this];
       if (v instanceof Model) {
@@ -298,14 +330,6 @@ export abstract class Model {
       }
     }
     return this;
-  }
-
-  #relations(): Record<string, ModelClass> {
-    const relations = this.relations();
-    for (const key in relations) {
-      if (relations[key] === undefined || !Object.hasOwn(this, key)) throw new Error(`Relation ${key} is not defined in ${this.#table}`);
-    }
-    return relations;
   }
 
   protected relations(): Record<string, ModelClass> {

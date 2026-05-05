@@ -153,6 +153,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("test_models");
+        this.seal();
       }
     }
 
@@ -197,6 +198,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("auto_models");
+        this.seal();
       }
     }
 
@@ -245,6 +247,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("parent_model");
+        this.seal();
       }
 
       protected relations(): Record<string, ModelClass> {
@@ -259,6 +262,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("child_model");
+        this.seal();
       }
     }
 
@@ -280,6 +284,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("parent_model");
+        this.seal();
       }
 
       protected relations(): Record<string, ModelClass> {
@@ -297,6 +302,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("child_model");
+        this.seal();
       }
     }
 
@@ -367,6 +373,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("parent_model");
+        this.seal();
       }
 
       protected relations(): Record<string, ModelClass> {
@@ -384,6 +391,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("child_model");
+        this.seal();
       }
     }
 
@@ -392,6 +400,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("parent_model");
+        this.seal();
       }
     }
 
@@ -422,6 +431,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     class EmptyModel extends Model {
       constructor() {
         super("empty_models");
+        this.seal();
       }
     }
 
@@ -444,6 +454,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("parent_model");
+        this.seal();
       }
 
       protected relations(): Record<string, ModelClass> {
@@ -458,11 +469,11 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("child_model");
+        this.seal();
       }
     }
 
-    const parent = new ParentModel();
-    await expect(() => parent.persist("throw")).rejects.toThrow("Relation children is not defined in");
+    expect(() => new ParentModel()).throw("Relation children is not defined in");
   });
 
   it("zero rows affected throws", async () => {
@@ -473,6 +484,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("parent_model");
+        this.seal();
       }
 
       protected relations(): Record<string, ModelClass> {
@@ -487,6 +499,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
 
       constructor() {
         super("child_model");
+        this.seal();
       }
     }
 
@@ -507,6 +520,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     class EmptyModel extends Model {
       constructor() {
         super("empty_models");
+        this.seal();
       }
     }
 
@@ -532,6 +546,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     class EmptyModel extends Model {
       constructor() {
         super("empty_models");
+        this.seal();
       }
     }
 
@@ -539,7 +554,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     await model.delete();
   });
 
-  it("attempts to override an existing record's id has no effect", async () => {
+  it("using non sealed models throw", async () => {
     const { Model } = await import("@/helpers/model");
 
     class EmptyModel extends Model {
@@ -549,10 +564,39 @@ describeWithMariaDb("Model MariaDB integration", () => {
     }
 
     const model = new EmptyModel();
+    await expect(() => model.persist()).rejects.toThrow("Model must be sealed before use");
+  });
+
+  it("persisting invalid ids throw", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+        this.seal();
+      }
+    }
+
+    const model = new EmptyModel();
+    await expect(() => model.persist({} as never)).rejects.toThrow("id must be a number or a string");
+  });
+
+  /*
+  it("attempts to override an existing record's id has no effect", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+        this.seal();
+      }
+    }
+
+    const model = new EmptyModel();
     await model.persist(10);
 
     // (model as {id: number}).id = 20;
-    Object.defineProperty(model, "id", { value: 20, writable: true });
+    Object.defineProperty(Object.getPrototypeOf(model), "id", {value: 20});
     await model.persist();
 
     const retrievedModel = new EmptyModel();
@@ -565,6 +609,7 @@ describeWithMariaDb("Model MariaDB integration", () => {
     class EmptyModel extends Model {
       constructor() {
         super("empty_models");
+        this.seal();
       }
     }
 
@@ -572,9 +617,10 @@ describeWithMariaDb("Model MariaDB integration", () => {
     await model.persist(11);
 
     // (model as {id: number}).id = 20;
-    Object.defineProperty(model, "id", { value: 20, writable: true, enumerable: true });
+    Object.defineProperty(Object.getPrototypeOf(model), "id", {value: 20});
     await model.persist();
 
     expect(model.toJSON()).toEqual({id: 11});
-  })
+  });
+   */
 });

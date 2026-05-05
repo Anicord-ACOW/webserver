@@ -19,5 +19,6 @@ export class Contract extends Model {
 
   constructor() {
     super("contract_types");
+    this.seal();
   }
 }

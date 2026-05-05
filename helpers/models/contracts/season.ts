@@ -8,5 +8,6 @@ export class Season extends Model {
 
   constructor() {
     super("seasons");
+    this.seal();
   }
 }
