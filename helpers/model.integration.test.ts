@@ -581,6 +581,53 @@ describeWithMariaDb("Model MariaDB integration", () => {
     await expect(() => model.persist({} as never)).rejects.toThrow("id must be a number or a string");
   });
 
+  it("concurrent operations throw", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+        this.seal();
+      }
+    }
+
+    const model = new EmptyModel();
+
+    let p = Promise.all([
+      model.persist(10),
+      model.persist(10),
+    ]);
+    await expect(async () => await p).rejects.toThrow("Model is already being persisted");
+
+    p = Promise.all([
+      model.persist(10),
+      model.retrieve(1),
+    ]);
+    await expect(async () => await p).rejects.toThrow("Model is already being persisted");
+
+    p = Promise.all([
+      model.delete(),
+      model.persist(10),
+    ]);
+    await expect(async () => await p).rejects.toThrow("Model is already being persisted");
+  });
+
+  it("retrieve on a bound model throws", async () => {
+    const { Model } = await import("@/helpers/model");
+
+    class EmptyModel extends Model {
+      constructor() {
+        super("empty_models");
+        this.seal();
+      }
+    }
+
+    const model = new EmptyModel();
+    // 2 separate calls with the same id will cause a db error if not coalesced
+    await model.persist(12);
+    await expect(() => model.retrieve(1)).rejects.toThrow("Model is already bound");
+  });
+
   /*
   it("attempts to override an existing record's id has no effect", async () => {
     const { Model } = await import("@/helpers/model");

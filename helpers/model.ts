@@ -24,7 +24,7 @@ export class TransientRelationError extends Error {
 }
 
 function quote(str: string) {
-  return `\`${str}\``;
+  return `\`${str.replaceAll("`", "``")}\``;
 }
 
 /**
@@ -104,6 +104,8 @@ export abstract class Model {
   #isSealed = false;
   #relations: Record<string, ModelClass> = {};
 
+  #operationLock: boolean = false;
+
   protected constructor(table: string) {
     if (!VALID_IDENTIFIER_REGEX.test(table)) throw new Error(`Invalid table name: ${table}`);
     if (table.indexOf("__") !== -1) throw new Error(`Table name cannot contain "__": ${table}`);
@@ -116,9 +118,10 @@ export abstract class Model {
     const relations = this.relations();
     for (const [key, value] of Object.entries(relations)) {
       if (value === undefined || !Object.hasOwn(this, key)) throw new Error(`Relation ${key} is not defined in ${this.#table}`);
+      this.#relations[key] = value;
     }
-    this.#relations = relations;
     Object.seal(this);
+    this.#relations = Object.freeze(this.#relations);
     Object.freeze(Object.getPrototypeOf(this));
     this.#isSealed = true;
   }
@@ -140,6 +143,16 @@ export abstract class Model {
    * @param id explicitly specify the row's id, otherwise use the db generated id
    */
   async persist(id?: string | number) {
+    if (this.#operationLock) throw new Error("Model is already being persisted");
+    this.#operationLock = true;
+    try {
+      return await this.#persist(id);
+    } finally {
+      this.#operationLock = false;
+    }
+  }
+
+  async #persist(id?: string | number) {
     this.#checkFieldNames();
     this.#checkSealed();
 
@@ -157,7 +170,8 @@ export abstract class Model {
       if (relations[key]) {
         const field = this[key as keyof this];
         if (field === null) return null;
-        if (!(field instanceof Model)) throw new Error(`Relation ${key} must be a Model`);
+        const expectedCls = relations[key];
+        if (!(field instanceof expectedCls)) throw new Error(`Relation ${key} must be a ${expectedCls.name}, got ${field}`);
         const model = this[key as keyof this] as Model;
         if (model.#id === undefined) throw new TransientRelationError(key);
         return model.#id;
@@ -175,21 +189,21 @@ export abstract class Model {
       if (this.#id === undefined) {
         if (id !== undefined) {
           // insert with explicit id
-          const columnSql = ["`id`", ...cols.map(x => `\`${x}\``)].join(", ");
+          const columnSql = ["`id`", ...cols.map(x => `${quote(x)}`)].join(", ");
           const valueSql = ["?", ...cols.map(() => "?")].join(", ");
-          const sql = `INSERT INTO \`${this.#table}\` (${columnSql}) VALUES (${valueSql})`;
+          const sql = `INSERT INTO ${quote(this.#table)} (${columnSql}) VALUES (${valueSql})`;
           await db.query<ResultSetHeader>(sql, [id, ...vals]);
           this.#id = id;
         } else {
           // let the db generate the id, this will throw if there's no mechanism to generate an id
-          const sql = `INSERT INTO \`${this.#table}\` (${cols.map(x => `\`${x}\``).join(", ")})
+          const sql = `INSERT INTO ${quote(this.#table)} (${cols.map(x => `${quote(x)}`).join(", ")})
                        VALUES (${cols.map(() => "?").join(", ")})`;
           const [result] = await db.query<ResultSetHeader>(sql, vals);
           this.#id = result.insertId;
         }
       } else {
         // update the existing row
-        const sql = `UPDATE \`${this.#table}\` SET ${cols.map(x => `\`${x}\` = ?`).join(", ")} WHERE \`id\` = ?`;
+        const sql = `UPDATE ${quote(this.#table)} SET ${cols.map(x => `${quote(x)} = ?`).join(", ")} WHERE \`id\` = ?`;
         const [result] = await db.query<ResultSetHeader>(sql, [...vals, this.#id]);
         if (result.affectedRows === 0) throw new Error("0 rows affected");
       }
@@ -203,6 +217,17 @@ export abstract class Model {
    * @param id the id of the row to retrieve
    */
   async retrieve(id: string | number) {
+    if (this.#operationLock) throw new Error("Model is already being persisted");
+    this.#operationLock = true;
+    try {
+      return await this.#retrieve(id);
+    } finally {
+      this.#operationLock = false;
+    }
+  }
+
+  async #retrieve(id: string | number) {
+    if (this.#id !== undefined && this.#id !== id) throw new Error("Model is already bound");
     this.#checkFieldNames();
     this.#checkSealed();
     const relationEntries = Object.entries(this.#relations);
@@ -227,7 +252,7 @@ export abstract class Model {
         ...[...entry.obj.#fields].filter(x => !Object.hasOwn(modelRelations, x) && !(x === "#id" || x === "#table")),
       ]
         // ... then bundle them into unique column aliases
-        .map(field => `${alias}.\`${field}\` as ${quote(`${alias}__${field}`)}`)
+        .map(field => `${alias}.${quote(field)} as ${quote(`${alias}__${field}`)}`)
         // ... make it sql-ish
         .join(", ");
     })
@@ -286,11 +311,21 @@ export abstract class Model {
    * Deletes the model from the database.
    */
   async delete() {
+    if (this.#operationLock) throw new Error("Model is already being persisted");
+    this.#operationLock = true;
+    try {
+      return await this.#delete();
+    } finally {
+      this.#operationLock = false;
+    }
+  }
+
+  async #delete() {
     this.#checkSealed();
     if (this.#id === undefined) return;
     const db = await getDbConnection();
     try {
-      const [result] = await db.query<ResultSetHeader>(`DELETE FROM \`${this.#table}\` WHERE \`id\` = ?`, [this.#id]);
+      const [result] = await db.query<ResultSetHeader>(`DELETE FROM ${quote(this.#table)} WHERE \`id\` = ?`, [this.#id]);
       if (result.affectedRows === 0) throw new Error("0 rows affected");
       // reset the id to undefined since it doesn't exist in the database anymore'
       this.#id = undefined;

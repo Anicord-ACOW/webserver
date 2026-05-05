@@ -157,6 +157,27 @@ describe("Model", () => {
   it("relations must point to a valid model", async () => {
     const model = new InvalidParentModel();
     model.age = 2;
-    await expect(() => model.persist("123")).rejects.toThrow("Relation age must be a Model");
+    await expect(() => model.persist("123")).rejects.toThrow("Relation age must be a");
+  });
+
+  it("wrong relation class throws", async () => {
+    const model = new ParentModel();
+    (model as unknown as {child: TestModel}).child = new TestModel();
+    expect(() => model.persist()).rejects.toThrow("Relation child must be a ChildModel");
+  });
+
+  it("id as a field throws", async () => {
+    class IdModel extends Model {
+      name: string = "";
+      age: Nullable<number> = null;
+
+      constructor() {
+        super("test_models");
+        Object.defineProperty(this, "id", { value: "123", enumerable: true });
+        this.seal();
+      }
+    }
+
+    expect(() => new IdModel()).throw("Field name 'id' is reserved");
   });
 });
