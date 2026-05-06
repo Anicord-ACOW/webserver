@@ -1,12 +1,12 @@
 import {Router} from "express";
 import {AuthorizationCode} from "simple-oauth2";
 import {createAuthToken} from "@/helpers/auth-tokens";
-import {generateOAuthState} from "@/helpers/auth";
+import {generateOAuthState, oAuthStateCookieName} from "@/helpers/auth";
+import {User} from "@/helpers/models/user";
 
 const router = Router();
+const ID = "discord";
 
-// const DISCORD_STATE_COOKIE = "__Host-discord-oauth-state";
-const DISCORD_STATE_COOKIE = "discord-oauth-state";
 const client = new AuthorizationCode({
     client: {
         id: process.env.DISCORD_CLIENT_ID!,
@@ -22,7 +22,7 @@ const client = new AuthorizationCode({
 
 router.get("/login", (req, res) => {
     const state = generateOAuthState();
-    res.cookie(DISCORD_STATE_COOKIE, state, {
+    res.cookie(oAuthStateCookieName(ID), state, {
         httpOnly: true,
         // secure: true,
         sameSite: "lax" as const,
@@ -39,8 +39,8 @@ router.get("/login", (req, res) => {
 router.get("/callback", async (req, res) => {
     // state check
     const returnedState = req.query.state;
-    const storedState = req.cookies[DISCORD_STATE_COOKIE];
-    res.clearCookie(DISCORD_STATE_COOKIE, {
+    const storedState = req.cookies[oAuthStateCookieName(ID)];
+    res.clearCookie(oAuthStateCookieName(ID), {
         httpOnly: true,
         // secure: true,
         sameSite: "lax",
@@ -73,6 +73,7 @@ router.get("/callback", async (req, res) => {
 
     // issue auth token identifying the discord user
     const data = await resp.json();
+    await User.ensureDiscordUser(data.user.id, data.user.username);
     const token = await createAuthToken({sub: data.user.id});
 
     res.json({success: true, token});
