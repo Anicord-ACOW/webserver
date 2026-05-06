@@ -1,8 +1,8 @@
 import {Router} from "express";
-import callback from "@/routes/auth/callback";
+import discord from "@/routes/auth/discord";
 
 const router = Router();
 
-router.use("/callback", callback);
+router.use("/discord", discord);
 
 export default router;
