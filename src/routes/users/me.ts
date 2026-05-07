@@ -8,10 +8,9 @@ const router = Router();
 
 router.get("/", readRateLimiter, requireAuth, async (req, res) => {
     const em = getEntityManager();
-    const user = await em.findOneOrFail(User, req.auth!.sub!);
     res.json({
         success: true,
-        user: user,
+        user: req.auth,
     });
 });
 

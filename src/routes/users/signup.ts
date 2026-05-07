@@ -8,11 +8,11 @@ import {readRateLimiter, writeRateLimiter} from "@/helpers/rate-limit";
 const router = Router();
 
 function authUserId(req: Request) {
-    const id = req.auth?.sub;
-    if (id === undefined) return null;
+    const user = req.auth;
+    if (user === undefined) return null;
 
     try {
-        return BigInt(id);
+        return user.id;
     } catch {
         return null;
     }
