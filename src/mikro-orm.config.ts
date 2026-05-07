@@ -1,5 +1,5 @@
 import {defineConfig} from "@mikro-orm/mariadb";
-import {UserSchema} from "@/helpers/models/user";
+import {RoleSchema, UserSchema} from "@/helpers/models/user";
 import {SignUpFormSchema} from "@/helpers/models/signup";
 import {BadgeSchema} from "@/helpers/models/badges/badge";
 import {BadgeProgressSchema} from "@/helpers/models/badges/badge-progress";
@@ -22,6 +22,7 @@ export default defineConfig({
     // explicitly list your entities - we'll create the User entity next
     entities: [
         UserSchema,
+        RoleSchema,
         SignUpFormSchema,
         BadgeSchema,
         BadgeProgressSchema,
