@@ -1,6 +1,6 @@
 import {defineEntity, p} from "@mikro-orm/core";
-import {User} from "./user";
-import {sqlSet} from "@/helpers/db";
+import {User} from "@/helpers/models/user";
+import {sqlSet} from "@/helpers/db-common";
 
 // these values came from the google form
 const PC_POWER = ["HIGH", "MID", "LOW", "POTATO"] as const;
