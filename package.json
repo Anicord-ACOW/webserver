@@ -14,6 +14,7 @@
   "license": "ISC",
   "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0",
   "devDependencies": {
+    "@mikro-orm/cli": "^7.0.14",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -22,10 +23,13 @@
     "@vitest/coverage-v8": "4.1.5",
     "nodemon": "^3.1.14",
     "tsc-alias": "^1.8.17",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
   },
   "dependencies": {
+    "@mikro-orm/core": "^7.0.14",
+    "@mikro-orm/mariadb": "^7.0.14",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",
