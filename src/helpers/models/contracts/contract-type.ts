@@ -1,15 +1,19 @@
-import {Model} from "@/helpers/model";
+import {defineEntity, p} from "@mikro-orm/core";
 
 /**
  * Represents a type of contract. Decides the type's icon and which channels do reviews go.
  */
-export class ContractType extends Model {
-  name: string = "";
-  icon: string = "";
-  discordChannelId: string = "";
+export const ContractTypeSchema = defineEntity({
+    name: "ContractType",
+    tableName: "contract_types",
+    properties: {
+        id: p.bigint().primary(),
+        name: p.string().default(""),
+        icon: p.string().default(""),
+        discordChannelId: p.string().default(""),
+    },
+});
 
-  constructor() {
-    super("contract_types");
-    this.seal();
-  }
-}
+export class ContractType extends ContractTypeSchema.class {}
+
+ContractTypeSchema.setClass(ContractType);

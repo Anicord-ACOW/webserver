@@ -1,15 +1,26 @@
-import {createPool} from "mysql2/promise";
+import {EntityManager, EntityName, FilterQuery, Loaded, MikroORM} from "@mikro-orm/core";
 
-function connectionString() {
-  if (process.env.MYSQL) {
-    return process.env.MYSQL;
-  } else {
-    return `mysql://${process.env.MYSQL_USERNAME}:${process.env.MYSQL_PASSWORD}@${process.env.MYSQL_HOST}:${process.env.MYSQL_PORT ?? 3306}/${process.env.MYSQL_DATABASE}`;
-  }
+import config from "@/mikro-orm.config";
+
+const orm = new MikroORM(config);
+
+export function getEntityManager() {
+    return orm.em.fork();
 }
 
-const dbPool = createPool(connectionString());
-
-export function getDbConnection() {
-  return dbPool.getConnection();
+export async function findOneOrCreate<
+    Entity extends object,
+>(
+    em: EntityManager,
+    entityName: EntityName<Entity>,
+    where: Partial<Entity>,
+) {
+    const result = await em.findOne(entityName, where);
+    if (result === null) {
+        // @ts-ignore im done dealing with this just let the db reject it
+        const obj = em.create(entityName, where as Entity, {partial: true});
+        em.persist(obj);
+        return obj;
+    }
+    return result;
 }
