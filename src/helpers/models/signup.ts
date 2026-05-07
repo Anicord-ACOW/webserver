@@ -1,5 +1,35 @@
 import {defineEntity, p} from "@mikro-orm/core";
 import {User} from "./user";
+import {sqlSet} from "@/helpers/db";
+
+// these values came from the google form
+const PC_POWER = ["HIGH", "MID", "LOW", "POTATO"] as const;
+const XBOX_GAME_PASS = ["CONSOLE", "PC", "ULTIMATE", "NONE"] as const;
+const GAME_GENRES = [
+    "PLATFORMERS",
+    "PUZZLES",
+    "WESTERN_RPGS",
+    "JRPGS",
+    "CRPGS",
+    "ARPGS",
+    "ACTION_ADVENTURE",
+    "ROGUELIKE",
+    "STRATEGY",
+    "SIMULATION",
+    "VISUAL_NOVEL",
+    "FIGHTING",
+    "RACING",
+    "SHOOTERS",
+    "RHYTHM",
+    "CASUAL",
+    "METROIDVANIA",
+    "BULLET_HELL",
+    "BULLET_HEAVEN",
+    "DATING",
+    "ROGUELIKE_DECKBUILDERS",
+] as const;
+const CHALLENGE_LEVELS = ["EASY", "MEDIUM", "HARD", "VERY_HARD", "SURPRISE_ME"] as const;
+const GAME_LENGTHS = ["SHORT", "AVERAGE", "LONG", "ANYTHING"] as const;
 
 export const SignUpFormSchema = defineEntity({
     name: "SignUpForm",
@@ -28,13 +58,13 @@ export const SignUpFormSchema = defineEntity({
         // steam/playstation/xbox
         gameProfileUrl: p.string().nullable(),
         // high/mid/low-end/potato
-        pcPower: p.string().nullable(),
-        hasXboxGamePass: p.boolean().nullable().default(false),
-        preferredGameGenres: p.string().nullable(),
+        pcPower: p.enum(PC_POWER).nullable(),
+        hasXboxGamePass: p.enum(XBOX_GAME_PASS).nullable(),
+        preferredGameGenres: p.enum(GAME_GENRES).array().columnType(sqlSet(GAME_GENRES)).nullable(),
         // easy/medium/hard/very hard/surprise me
-        challengeLevelPreference: p.string().nullable(),
+        challengeLevelPreference: p.enum(CHALLENGE_LEVELS).nullable(),
         // short/average/long/anything
-        gameLengthPreference: p.string().nullable(),
+        gameLengthPreference: p.enum(GAME_LENGTHS).nullable(),
 
         // extras
         competitiveBlitzParticipation: p.boolean().default(false),

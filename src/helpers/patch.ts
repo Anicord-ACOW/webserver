@@ -33,11 +33,24 @@ function inferRuntimeType(prop: EntityProperty) {
     return undefined;
 }
 
+function zodForEnumProperty(prop: EntityProperty) {
+    if (!Array.isArray(prop.items)) return null;
+
+    const itemSchema = z.custom(value => prop.items!.includes(value as never));
+    return prop.array ? z.array(itemSchema) : itemSchema;
+}
+
 function zodForProperty(prop: EntityProperty) {
     let schema: z.ZodType;
 
     if (prop.kind !== undefined && prop.kind !== "scalar" && !prop.mapToPk) {
         return null;
+    }
+
+    if (prop.enum) {
+        const enumSchema = zodForEnumProperty(prop);
+        if (!enumSchema) return null;
+        return prop.nullable ? enumSchema.nullable() : enumSchema;
     }
 
     switch (inferRuntimeType(prop)) {
@@ -89,7 +102,7 @@ function firstIssueMessage(error: z.ZodError) {
     const issue = error.issues[0];
     if (!issue) return "Invalid request body";
 
-    const field = issue.path.join(".");
+    const field = issue.path[0] === undefined ? undefined : String(issue.path[0]);
     return field ? `Invalid value for ${field}` : issue.message;
 }
 

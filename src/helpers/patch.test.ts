@@ -71,4 +71,43 @@ describe("parseModelPatch", () => {
             error: "Invalid value for extremeSpecialParticipation",
         });
     });
+
+    it("accepts enum and enum array fields", () => {
+        expect(parseModelPatch(
+            {
+                pcPower: "HIGH",
+                preferredGameGenres: ["PLATFORMERS", "JRPGS"],
+            },
+            signupSchema,
+            {exclude: protectedSignupFields},
+        )).toEqual({
+            success: true,
+            patch: {
+                pcPower: "HIGH",
+                preferredGameGenres: ["PLATFORMERS", "JRPGS"],
+            },
+        });
+    });
+
+    it("rejects invalid enum values", () => {
+        expect(parseModelPatch(
+            {pcPower: "TOASTER"},
+            signupSchema,
+            {exclude: protectedSignupFields},
+        )).toEqual({
+            success: false,
+            error: "Invalid value for pcPower",
+        });
+    });
+
+    it("rejects invalid enum array values", () => {
+        expect(parseModelPatch(
+            {preferredGameGenres: ["PLATFORMERS", "NOT_A_GENRE"]},
+            signupSchema,
+            {exclude: protectedSignupFields},
+        )).toEqual({
+            success: false,
+            error: "Invalid value for preferredGameGenres",
+        });
+    });
 });
