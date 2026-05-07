@@ -2,10 +2,11 @@ import {Router} from "express";
 import {requireAuth} from "@/middleware/auth";
 import {User} from "@/helpers/models/user";
 import {getEntityManager} from "@/helpers/db";
+import {readRateLimiter} from "@/helpers/rate-limit";
 
 const router = Router();
 
-router.get("/", requireAuth, async (req, res) => {
+router.get("/", readRateLimiter, requireAuth, async (req, res) => {
     const em = getEntityManager();
     const user = await em.findOneOrFail(User, req.auth!.sub!);
     res.json({

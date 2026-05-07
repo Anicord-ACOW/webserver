@@ -3,6 +3,7 @@ import {findOneOrCreate, getEntityManager} from "@/helpers/db";
 import {SignUpFormSchema, SignupForm} from "@/helpers/models/signup";
 import {parseModelPatch} from "@/helpers/patch";
 import {requireAuth} from "@/middleware/auth";
+import {readRateLimiter, writeRateLimiter} from "@/helpers/rate-limit";
 
 const router = Router();
 
@@ -17,7 +18,7 @@ function authUserId(req: Request) {
     }
 }
 
-router.get("/template/me", requireAuth, async (req, res) => {
+router.get("/template/me", readRateLimiter, requireAuth, async (req, res) => {
     const userId = authUserId(req);
     if (userId === null) return res.status(401).json({success: false});
 
@@ -29,7 +30,7 @@ router.get("/template/me", requireAuth, async (req, res) => {
     });
 });
 
-router.patch("/template/me", requireAuth, async (req, res) => {
+router.patch("/template/me", writeRateLimiter, requireAuth, async (req, res) => {
     const userId = authUserId(req);
     if (userId === null) return res.status(401).json({success: false});
 

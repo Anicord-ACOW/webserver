@@ -4,8 +4,8 @@ import routes from "@/routes";
 
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({limit: "50kb"}));
+app.use(express.urlencoded({ extended: true, limit: "50kb" }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 
 app.use(routes);
