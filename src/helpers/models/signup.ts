@@ -5,7 +5,7 @@ export const SignUpFormSchema = defineEntity({
     name: "SignUpForm",
     properties: {
         id: p.bigint().primary(),
-        user: () => p.manyToOne(User).mapToPk().joinColumn("userId").referenceColumnName("id"),
+        user: () => p.manyToOne(User).mapToPk().joinColumn("user").referenceColumnName("id"),
 
         // basic info
         // the server you represent, e.g. Frieren
