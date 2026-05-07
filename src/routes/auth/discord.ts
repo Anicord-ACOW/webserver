@@ -1,7 +1,7 @@
 import {Router} from "express";
 import {AuthorizationCode} from "simple-oauth2";
 import {createAuthToken} from "@/helpers/auth-tokens";
-import {generateOAuthState, oAuthStateCookieName} from "@/helpers/auth";
+import {encryptCookie, generateOAuthState, oAuthStateCookieName, verifyCookie} from "@/helpers/auth";
 import {getEntityManager} from "@/helpers/db";
 import {User} from "@/helpers/models/user";
 import {oauthRateLimiter} from "@/helpers/rate-limit";
@@ -24,7 +24,7 @@ const client = new AuthorizationCode({
 
 router.get("/login", oauthRateLimiter, (req, res) => {
     const state = generateOAuthState();
-    res.cookie(oAuthStateCookieName(ID), state, {
+    res.cookie(oAuthStateCookieName(ID), encryptCookie(state), {
         signed: true,
         httpOnly: true,
         // secure: true,
@@ -42,7 +42,6 @@ router.get("/login", oauthRateLimiter, (req, res) => {
 router.get("/callback", oauthRateLimiter, async (req, res) => {
     // state check
     const returnedState = req.query.state;
-    console.log(req.signedCookies, req.query.state,);
     const storedState = req.signedCookies[oAuthStateCookieName(ID)];
     res.clearCookie(oAuthStateCookieName(ID), {
         signed: true,
@@ -51,7 +50,7 @@ router.get("/callback", oauthRateLimiter, async (req, res) => {
         sameSite: "lax",
         path: "/",
     });
-    if (!returnedState || returnedState !== storedState) {
+    if (!returnedState || !verifyCookie(storedState, returnedState as string)) {
         console.error("State mismatch:", {returnedState, storedState});
         return res.status(400).json({success: false});
     }
