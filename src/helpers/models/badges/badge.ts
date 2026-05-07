@@ -1,17 +1,21 @@
-import {Model} from "@/helpers/model";
+import {defineEntity, p} from "@mikro-orm/core";
 
 /**
  * Represents a badge that a user can earn. Usually represents an achievement.
  */
-export class Badge extends Model {
-  name: string = "";
-  // this could be the id of an image within the repo or a url to a cdn
-  imageId: string = "";
-  description: string = "";
-  objective: string = "";
+export const BadgeSchema = defineEntity({
+    name: "Badge",
+    tableName: "badges",
+    properties: {
+        id: p.bigint().primary(),
+        name: p.string().default(""),
+        // this could be the id of an image within the repo or a url to a cdn
+        imageId: p.string().default(""),
+        description: p.string().default(""),
+        objective: p.string().default(""),
+    },
+});
 
-  constructor() {
-    super("badges");
-    this.seal();
-  }
-}
+export class Badge extends BadgeSchema.class {}
+
+BadgeSchema.setClass(Badge);

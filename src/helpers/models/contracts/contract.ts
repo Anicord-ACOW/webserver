@@ -1,24 +1,30 @@
-import {Model} from "@/helpers/model";
+import {defineEntity, p} from "@mikro-orm/core";
+import {User} from "../user";
+import {ContractType} from "./contract-type";
+import {Season} from "./season";
 
 /**
  * Represents a contract that a participant must complete to obtain a pass.
  */
-export class Contract extends Model {
-  seasonId: number = 0;
+export const ContractSchema = defineEntity({
+    name: "Contract",
+    tableName: "contracts",
+    properties: {
+        id: p.bigint().primary(),
+        season: () => p.manyToOne(Season).mapToPk().joinColumn("seasonId").referenceColumnName("id"),
+        contractor: () => p.manyToOne(User).mapToPk().joinColumn("contractorId").referenceColumnName("id"),
+        contractee: () => p.manyToOne(User).mapToPk().joinColumn("contracteeId").referenceColumnName("id"),
+        contractType: () => p.manyToOne(ContractType).mapToPk().joinColumn("contractTypeId").referenceColumnName("id"),
 
-  contractorId: string = "";
-  contracteeId: string = "";
-  contractTypeId: number = 0;
+        // the actual series/game/dish/etc to complete, eg "Shibouyugi (Anime)"
+        name: p.string().default(""),
+        progress: p.string().default(""),
+        // normally scores should be a number but people like stuff such as "69/420", i shall oblige
+        score: p.string().default(""),
+        reviewContent: p.string().default(""),
+    },
+});
 
-  // the actual series/game/dish/etc to complete, eg "Shibouyugi (Anime)"
-  name: string = "";
-  progress: string = "";
-  // normally scores should be a number but people like stuff such as "69/420", i shall oblige
-  score: string = "";
-  reviewContent: string = "";
+export class Contract extends ContractSchema.class {}
 
-  constructor() {
-    super("contract_types");
-    this.seal();
-  }
-}
+ContractSchema.setClass(Contract);

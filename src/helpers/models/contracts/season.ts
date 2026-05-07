@@ -1,13 +1,17 @@
-import {Model} from "@/helpers/model";
+import {defineEntity, p} from "@mikro-orm/core";
 
 /**
  * Represents a season of the contracts event.
  */
-export class Season extends Model {
-  name: string = "";
+export const SeasonSchema = defineEntity({
+    name: "Season",
+    tableName: "seasons",
+    properties: {
+        id: p.bigint().primary(),
+        name: p.string().default(""),
+    },
+});
 
-  constructor() {
-    super("seasons");
-    this.seal();
-  }
-}
+export class Season extends SeasonSchema.class {}
+
+SeasonSchema.setClass(Season);
