@@ -7,7 +7,9 @@ import {ContractSchema} from "@/helpers/models/contracts/contract";
 import {ContractTypeSchema} from "@/helpers/models/contracts/contract-type";
 import {SeasonSchema} from "@/helpers/models/contracts/season";
 
-process.loadEnvFile(".env");
+try {
+    process.loadEnvFile(".env");
+} catch {}
 
 function connectionString() {
     if (process.env.MYSQL) {

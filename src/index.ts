@@ -1,7 +1,6 @@
-import {MikroORM} from "@mikro-orm/core";
-import config from "@/mikro-orm.config";
-
-process.loadEnvFile(".env");
+try {
+    process.loadEnvFile(".env");
+} catch {}
 
 void import("@/app").then(({default: app}) => {
     app.listen(3000, (err) => {
