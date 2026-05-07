@@ -2,6 +2,7 @@ import {Router} from "express";
 import {AuthorizationCode} from "simple-oauth2";
 import {createAuthToken} from "@/helpers/auth-tokens";
 import {generateOAuthState, oAuthStateCookieName} from "@/helpers/auth";
+import {getEntityManager} from "@/helpers/db";
 import {User} from "@/helpers/models/user";
 
 const router = Router();
@@ -73,7 +74,18 @@ router.get("/callback", async (req, res) => {
 
     // issue auth token identifying the discord user
     const data = await resp.json();
-    await User.ensureDiscordUser(data.user.id, data.user.username);
+    const em = getEntityManager();
+    let user;
+    try {
+        user = await em.findOneOrFail(User, data.user.id);
+    } catch (e) {
+        console.log(e);
+        user = new User();
+        em.persist(user);
+        user.id = data.user.id;
+    }
+    user.username = data.user.username;
+    await em.flush();
     const token = await createAuthToken({sub: data.user.id});
 
     res.json({success: true, token});
