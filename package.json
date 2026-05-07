@@ -5,10 +5,11 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "vitest --coverage",
-    "start": "node dist/index.js",
+    "start": "npx mikro-orm schema:update --run && node dist/index.js",
     "build": "tsc && tsc-alias",
     "dev": "nodemon dist/index.js",
-    "db:update": "npx mikro-orm schema:update --run"
+    "db:update": "npx mikro-orm schema:update --run",
+    "db:schema": "npx mikro-orm schema:create --dump"
   },
   "keywords": [],
   "author": "",
