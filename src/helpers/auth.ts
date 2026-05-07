@@ -1,4 +1,5 @@
-import {createHmac, timingSafeEqual} from "crypto";
+import {timingSafeEqual} from "crypto";
+import {createAuthToken, verifyAuthToken} from "@/helpers/auth-tokens";
 
 export function generateOAuthState() {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -10,9 +11,14 @@ export function oAuthStateCookieName(provider: string) {
 }
 
 export function encryptCookie(cleartext: string) {
-    return createHmac("sha256", process.env.COOKIE_SECRET!).update(cleartext, "utf8").digest("hex");
+    return createAuthToken({state: cleartext}, {expiresIn: "10m"})
 }
 
 export function verifyCookie(ciphertext: string, cleartext: string) {
-    return timingSafeEqual(Buffer.from(ciphertext), Buffer.from(encryptCookie(cleartext)));
+    try {
+        const payload = verifyAuthToken(ciphertext);
+        return timingSafeEqual(Buffer.from(payload.state), Buffer.from(cleartext));
+    } catch (e) {
+        return false;
+    }
 }
