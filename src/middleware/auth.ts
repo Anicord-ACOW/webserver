@@ -1,6 +1,6 @@
 import {NextFunction, Request, Response} from "express";
 import {verifyAuthToken} from "@/helpers/auth-tokens";
-import {User} from "@/helpers/models/user";
+import {Role, User} from "@/helpers/models/user";
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
     const token = req.headers.authorization;
@@ -17,6 +17,13 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
     auth(req, res, () => {
         if (req.auth === undefined) return res.status(401).json({success: false});
+        next();
+    });
+}
+
+export function requireAllRoles(roles: string[]) {
+    return (req: Request, res: Response, next: NextFunction) => requireAuth(req, res, () => {
+        if (!req.auth?.roles.reduce((acc, role) => acc && roles.includes(role.role), true)) return res.status(403).json({success: false});
         next();
     });
 }
