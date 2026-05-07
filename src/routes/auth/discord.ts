@@ -24,6 +24,7 @@ const client = new AuthorizationCode({
 router.get("/login", (req, res) => {
     const state = generateOAuthState();
     res.cookie(oAuthStateCookieName(ID), state, {
+        signed: true,
         httpOnly: true,
         // secure: true,
         sameSite: "lax" as const,
@@ -40,8 +41,10 @@ router.get("/login", (req, res) => {
 router.get("/callback", async (req, res) => {
     // state check
     const returnedState = req.query.state;
-    const storedState = req.cookies[oAuthStateCookieName(ID)];
+    console.log(req.signedCookies, req.query.state,);
+    const storedState = req.signedCookies[oAuthStateCookieName(ID)];
     res.clearCookie(oAuthStateCookieName(ID), {
+        signed: true,
         httpOnly: true,
         // secure: true,
         sameSite: "lax",
