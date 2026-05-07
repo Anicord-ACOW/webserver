@@ -2,7 +2,7 @@ import {Router} from "express";
 import {AuthorizationCode} from "simple-oauth2";
 import {createAuthToken} from "@/helpers/auth-tokens";
 import {encryptCookie, generateOAuthState, oAuthStateCookieName, verifyCookie} from "@/helpers/auth";
-import {getEntityManager} from "@/helpers/db";
+import {findOneOrCreate, getEntityManager} from "@/helpers/db";
 import {User} from "@/helpers/models/user";
 import {oauthRateLimiter} from "@/helpers/rate-limit";
 
@@ -51,7 +51,6 @@ router.get("/callback", oauthRateLimiter, async (req, res) => {
         path: "/",
     });
     if (!returnedState || !verifyCookie(storedState, returnedState as string)) {
-        console.error("State mismatch:", {returnedState, storedState});
         return res.status(400).json({success: false});
     }
 
@@ -78,15 +77,7 @@ router.get("/callback", oauthRateLimiter, async (req, res) => {
     // issue auth token identifying the discord user
     const data = await resp.json();
     const em = getEntityManager();
-    let user;
-    try {
-        user = await em.findOneOrFail(User, data.user.id);
-    } catch (e) {
-        console.log(e);
-        user = new User();
-        em.persist(user);
-        user.id = data.user.id;
-    }
+    const user = await findOneOrCreate(em, User, {id: BigInt(data.user.id)});
     user.username = data.user.username;
     await em.flush();
     const token = await createAuthToken({sub: data.user.id});
