@@ -1,6 +1,6 @@
 import {Request, Router} from "express";
 import {findOneOrCreate, getEntityManager} from "@/helpers/db";
-import {SignUpFormSchema, SignupForm} from "@/helpers/models/signup";
+import {SignUpFormSchema, SignupForm} from "@/helpers/models/season/signup";
 import {parseModelPatch} from "@/helpers/patch";
 import {requireAuth} from "@/middleware/auth";
 import {readRateLimiter, writeRateLimiter} from "@/helpers/rate-limit";

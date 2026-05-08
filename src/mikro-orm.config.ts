@@ -1,6 +1,6 @@
 import {defineConfig} from "@mikro-orm/mariadb";
 import {RoleSchema, UserSchema} from "@/helpers/models/user";
-import {SignUpFormSchema} from "@/helpers/models/signup";
+import {SignUpFormSchema} from "@/helpers/models/season/signup";
 import {BadgeSchema} from "@/helpers/models/badges/badge";
 import {BadgeProgressSchema} from "@/helpers/models/badges/badge-progress";
 import {ContractSchema} from "@/helpers/models/contracts/contract";

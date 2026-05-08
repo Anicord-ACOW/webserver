@@ -11,6 +11,9 @@ export const BadgeProgressSchema = defineEntity({
         id: p.bigint().primary(),
         badge: () => p.manyToOne(Badge).joinColumn("badge").referenceColumnName("id"),
         progress: p.integer().default(0),
+
+        createdAt: p.datetime().onCreate(() => new Date()),
+        updatedAt: p.datetime().onCreate(() => new Date()).onUpdate(() => new Date()),
     },
 });
 

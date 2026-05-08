@@ -1,5 +1,5 @@
 import {defineEntity, p} from "@mikro-orm/core";
-import {Season} from "@/helpers/models/contracts/season";
+import {Season} from "@/helpers/models/season/season";
 
 /**
  * Represents a type of contract. Decides the type's icon and which channels do reviews go.
@@ -10,9 +10,17 @@ export const ContractTypeSchema = defineEntity({
     properties: {
         id: p.bigint().primary(),
         season: () => p.manyToOne(Season).mapToPk().joinColumn("season").referenceColumnName("id"),
-        name: p.string().default(""),
-        icon: p.string().default(""),
-        discordChannelId: p.string().default(""),
+        name: p.string(),
+        icon: p.string(),
+        discordChannelId: p.string(),
+
+        // timeline
+        assignmentStart: p.datetime(),
+        assignmentEnd: p.datetime(),
+        reviewDeadline: p.datetime(),
+
+        createdAt: p.datetime().onCreate(() => new Date()),
+        updatedAt: p.datetime().onCreate(() => new Date()).onUpdate(() => new Date()),
     },
 });
 

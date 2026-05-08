@@ -1,7 +1,7 @@
 import {defineEntity, p} from "@mikro-orm/core";
-import {User} from "../user";
-import {ContractType} from "./contract-type";
-import {Season} from "./season";
+import {User} from "@/helpers/models/user";
+import {ContractType} from "@/helpers/models/contracts/contract-type";
+import {Season} from "@/helpers/models/season/season";
 
 /**
  * Represents a contract that a participant must complete to obtain a pass.
@@ -22,6 +22,10 @@ export const ContractSchema = defineEntity({
         // normally scores should be a number but people like stuff such as "69/420", i shall oblige
         score: p.string().default(""),
         reviewContent: p.string().default(""),
+        verdict: p.enum(["PASS", "LATE_PASS", "FAIL", "PENDING"]).default("PENDING"),
+
+        createdAt: p.datetime().onCreate(() => new Date()),
+        updatedAt: p.datetime().onCreate(() => new Date()).onUpdate(() => new Date()),
     },
 });
 
