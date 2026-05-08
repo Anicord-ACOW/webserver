@@ -112,6 +112,9 @@ export function parseModelPatch<TEntity extends object>(
     options: ModelPatchOptions = {},
 ): ModelPatchResult<TEntity> {
     const excluded = new Set(options.exclude ?? []);
+    excluded.add("id");
+    excluded.add("createdAt");
+    excluded.add("updatedAt");
     const excludeManagedFields = options.excludeManagedFields ?? true;
     const shape: Record<string, z.ZodType> = {};
 
