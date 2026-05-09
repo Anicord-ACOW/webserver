@@ -3,12 +3,12 @@ import {beforeAll, describe, expect, it} from "vitest";
 import {parseModelPatch} from "@/helpers/patch";
 
 const protectedSignupFields = ["id", "user", "userId"];
-let signupSchema: typeof import("@/helpers/models/signup").SignUpFormSchema;
+let signupSchema: typeof import("@/helpers/models/season/signup").SignUpFormSchema;
 
 describe("parseModelPatch", () => {
     beforeAll(async () => {
         (globalThis as typeof globalThis & {AsyncLocalStorage?: typeof AsyncLocalStorage}).AsyncLocalStorage = AsyncLocalStorage;
-        signupSchema = (await import("@/helpers/models/signup")).SignUpFormSchema;
+        signupSchema = (await import("@/helpers/models/season/signup")).SignUpFormSchema;
     });
 
     it("accepts partial objects matching editable model fields", () => {
@@ -48,6 +48,11 @@ describe("parseModelPatch", () => {
     it("rejects excluded property names and field names", () => {
         expect(parseModelPatch({id: 1}, signupSchema, {exclude: protectedSignupFields}).success).toBe(false);
         expect(parseModelPatch({userId: 1, repServer: "Frieren"}, signupSchema, {exclude: protectedSignupFields}).success).toBe(false);
+    });
+
+    it("rejects foreign key fields by default", () => {
+        expect(parseModelPatch({user: 1}, signupSchema).success).toBe(false);
+        expect(parseModelPatch({userId: 1, repServer: "Frieren"}, signupSchema).success).toBe(false);
     });
 
     it("rejects invalid field values", () => {
