@@ -5,6 +5,7 @@ import {encryptCookie, generateOAuthState, oAuthStateCookieName, verifyCookie} f
 import {findOneOrCreate, getEntityManager} from "@/helpers/db";
 import {User} from "@/helpers/models/user";
 import {oauthRateLimiter} from "@/helpers/rate-limit";
+import {APIError} from "@/helpers/api-error";
 
 const router = Router();
 const ID = "discord";
@@ -22,7 +23,7 @@ const client = new AuthorizationCode({
     },
 });
 
-router.get("/login", oauthRateLimiter, (req, res) => {
+router.get("/auth/discord/login", oauthRateLimiter, (req, res) => {
     const state = generateOAuthState();
     res.cookie(oAuthStateCookieName(ID), encryptCookie(state), {
         signed: true,
@@ -39,7 +40,7 @@ router.get("/login", oauthRateLimiter, (req, res) => {
     }));
 });
 
-router.get("/callback", oauthRateLimiter, async (req, res) => {
+router.get("/auth/discord/callback", oauthRateLimiter, async (req, res) => {
     // state check
     const returnedState = req.query.state;
     const storedState = req.signedCookies[oAuthStateCookieName(ID)];

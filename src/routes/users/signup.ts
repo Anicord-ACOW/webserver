@@ -7,20 +7,8 @@ import {readRateLimiter, writeRateLimiter} from "@/helpers/rate-limit";
 
 const router = Router();
 
-function authUserId(req: Request) {
-    const user = req.auth;
-    if (user === undefined) return null;
-
-    try {
-        return user.id;
-    } catch {
-        return null;
-    }
-}
-
-router.get("/template/me", readRateLimiter, requireAuth, async (req, res) => {
-    const userId = authUserId(req);
-    if (userId === null) return res.status(401).json({success: false});
+router.get("/users/signup/template/me", readRateLimiter, requireAuth, async (req, res) => {
+    const userId = req.auth!.id;
 
     const em = getEntityManager();
     const form = await findOneOrCreate(em, SignupForm, {user: userId});
@@ -30,9 +18,8 @@ router.get("/template/me", readRateLimiter, requireAuth, async (req, res) => {
     });
 });
 
-router.patch("/template/me", writeRateLimiter, requireAuth, async (req, res) => {
-    const userId = authUserId(req);
-    if (userId === null) return res.status(401).json({success: false});
+router.patch("/users/signup/template/me", writeRateLimiter, requireAuth, async (req, res) => {
+    const userId = req.auth!.id;
 
     const result = parseModelPatch(req.body, SignUpFormSchema);
 
