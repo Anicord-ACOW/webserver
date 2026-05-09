@@ -51,13 +51,12 @@ router.get("/callback", oauthRateLimiter, async (req, res) => {
         path: "/",
     });
     if (!returnedState || !verifyCookie(storedState, returnedState as string)) {
-        return res.status(400).json({success: false});
+        throw new APIError(400);
     }
 
     const {code} = req.query;
     if (!code) {
-        console.error("No code returned from Discord");
-        return res.status(400).json({success: false});
+        throw new APIError(400);
     }
 
     // exchange code for access token
@@ -72,7 +71,7 @@ router.get("/callback", oauthRateLimiter, async (req, res) => {
             "Authorization": `${accessToken.token.token_type} ${accessToken.token.access_token}`,
         }
     })
-    if (resp.status !== 200) return res.status(400).json({success: false, code: "NOT_IN_SERVER"});
+    if (resp.status !== 200) throw new APIError(403);
 
     // issue auth token identifying the discord user
     const data = await resp.json();

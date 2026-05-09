@@ -131,7 +131,7 @@ export function parseModelPatch<TEntity extends object>(
 
     const patchSchema = z.object(shape).partial().strict();
     const result = patchSchema.safeParse(body);
-    if (!result.success) return {success: false, error: firstIssueMessage(result.error)};
+    if (!result.success) throw new APIError(400, firstIssueMessage(result.error));
 
     return {success: true, patch: result.data as Partial<TEntity>};
 }
