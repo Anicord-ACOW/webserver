@@ -1,14 +1,12 @@
 import type {EntityProperty, EntitySchema} from "@mikro-orm/core";
 import {z} from "zod";
+import {APIError} from "@/helpers/api-error";
 
 type ModelPatchOptions = {
     exclude?: readonly string[];
     excludeManagedFields?: boolean;
+    excludeForeignKeyFields?: boolean;
 };
-
-export type ModelPatchResult<TEntity extends object> =
-    | {success: true, patch: Partial<TEntity>}
-    | {success: false, error: string};
 
 function propertyMatchesName(prop: EntityProperty, names: Set<string>) {
     return [
@@ -18,9 +16,19 @@ function propertyMatchesName(prop: EntityProperty, names: Set<string>) {
     ].some(name => names.has(String(name)));
 }
 
-function shouldSkipProperty(prop: EntityProperty, excluded: Set<string>, excludeManagedFields: boolean) {
+function isForeignKeyProperty(prop: EntityProperty) {
+    return prop.kind !== undefined && prop.kind !== "scalar";
+}
+
+function shouldSkipProperty(
+    prop: EntityProperty,
+    excluded: Set<string>,
+    excludeManagedFields: boolean,
+    excludeForeignKeyFields: boolean,
+) {
     if (propertyMatchesName(prop, excluded)) return true;
     if (excludeManagedFields && (prop.primary || prop.onCreate || prop.onUpdate)) return true;
+    if (excludeForeignKeyFields && isForeignKeyProperty(prop)) return true;
     return false;
 }
 
@@ -110,12 +118,13 @@ export function parseModelPatch<TEntity extends object>(
     body: unknown,
     schema: EntitySchema<TEntity>,
     options: ModelPatchOptions = {},
-): ModelPatchResult<TEntity> {
+): Partial<TEntity> {
     const excluded = new Set(options.exclude ?? []);
     excluded.add("id");
     excluded.add("createdAt");
     excluded.add("updatedAt");
     const excludeManagedFields = options.excludeManagedFields ?? true;
+    const excludeForeignKeyFields = options.excludeForeignKeyFields ?? true;
     const shape: Record<string, z.ZodType> = {};
 
     for (const [propertyName, rawProp] of Object.entries(schema.meta.properties) as [string, EntityProperty][]) {
@@ -123,7 +132,7 @@ export function parseModelPatch<TEntity extends object>(
             ...rawProp,
             name: rawProp.name ?? propertyName,
         };
-        if (shouldSkipProperty(prop, excluded, excludeManagedFields)) continue;
+        if (shouldSkipProperty(prop, excluded, excludeManagedFields, excludeForeignKeyFields)) continue;
 
         const propSchema = zodForProperty(prop);
         if (propSchema) shape[prop.name] = propSchema;
@@ -133,5 +142,5 @@ export function parseModelPatch<TEntity extends object>(
     const result = patchSchema.safeParse(body);
     if (!result.success) throw new APIError(400, firstIssueMessage(result.error));
 
-    return {success: true, patch: result.data as Partial<TEntity>};
+    return result.data as Partial<TEntity>;
 }

@@ -34,14 +34,11 @@ router.patch("/template/me", writeRateLimiter, requireAuth, async (req, res) => 
     const userId = authUserId(req);
     if (userId === null) return res.status(401).json({success: false});
 
-    const result = parseModelPatch(req.body, SignUpFormSchema, {
-        exclude: ["id", "user", "userId"],
-    });
-    if (!result.success) return res.status(400).json({success: false, error: result.error});
+    const result = parseModelPatch(req.body, SignUpFormSchema);
 
     const em = getEntityManager();
     const form = await findOneOrCreate(em, SignupForm, {user: userId});
-    Object.assign(form, result.patch);
+    Object.assign(form, result);
     await em.flush();
 
     res.json({
