@@ -9,10 +9,12 @@ export const SeasonSchema = defineEntity({
     tableName: "seasons",
     properties: {
         id: p.bigint().primary(),
-        name: p.string().default(""),
+        name: p.string(),
         // signup period
-        signupsStart: p.datetime().default(new Date()),
-        signupsEnd: p.datetime().default(new Date()),
+        signupsStart: p.datetime(),
+        signupsEnd: p.datetime(),
+
+        completed: p.boolean().default(false),
 
         contractTypes: () => p.oneToMany(ContractTypeSchema).mappedBy("season"),
 
