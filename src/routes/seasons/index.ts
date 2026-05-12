@@ -30,7 +30,7 @@ router.get("/seasons/current", readRateLimiter, async (req, res) => {
     res.json({success: true, season});
 });
 
-router.get("/season/:id", readRateLimiter, async (req, res) => {
+router.get("/seasons/:id", readRateLimiter, async (req, res) => {
     const season = await req.em.findOne(Season, req.params.id);
     if (season === null) throw new APIError(404, "Season not found");
     res.json({success: true, season});

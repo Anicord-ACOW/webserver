@@ -18,11 +18,11 @@ router.get("/users/me", readRateLimiter, requireAuth, async (req, res) => {
 
 router.get("/users/:id", readRateLimiter, requireAllRoles(["admin"]), async (req, res) => {
     const em = getEntityManager();
-    const user = em.findOne(User, req.params.id);
+    const user = await em.findOne(User, req.params.id, {populate: ["roles"]});
     if (user === null) throw new APIError(404, "User not found");
     res.json({
         success: true,
-        user: req.auth,
+        user,
     });
 });
 
