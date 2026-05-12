@@ -24,7 +24,8 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 export function requireAllRoles(roles: string[]) {
     return (req: Request, res: Response, next: NextFunction) => requireAuth(req, res, () => {
-        if (!req.auth?.roles.reduce((acc, role) => acc && roles.includes(role.role), true)) throw new APIError(403);
+        const userRoles = req.auth!.roles.getItems();
+        if (!roles.reduce((acc, role) => acc && userRoles.some(x => x.role === role), true)) throw new APIError(403);
         next();
     });
 }
