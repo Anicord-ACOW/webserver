@@ -47,9 +47,9 @@ describe("parseModelPatch", () => {
     });
 
     it("rejects foreign key fields by default", () => {
-        expect(() => parseModelPatch({user: 1}, signupSchema).success)
+        expect(() => parseModelPatch({user: 1}, signupSchema))
             .toThrow("Unrecognized key");
-        expect(() => parseModelPatch({userId: 1, repServer: "Frieren"}, signupSchema).success)
+        expect(() => parseModelPatch({userId: 1, repServer: "Frieren"}, signupSchema))
             .toThrow("Unrecognized key");
     });
 
