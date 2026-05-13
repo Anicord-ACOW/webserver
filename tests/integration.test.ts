@@ -256,6 +256,17 @@ describe("integration test", () => {
         expect(response.status).toBe(403);
     });
 
+    it("doesn't allow allow users to retrieve others' signup form", async () => {
+        const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/users/1/signup-form`, {
+            method: "GET",
+            headers: {
+                Authorization: token,
+            },
+        });
+        expect(response.status).toBe(403);
+    });
+
     it("allows allow admins to update others' signup form", async () => {
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/users/2/signup-form`, {

@@ -18,6 +18,17 @@ router.get("/users/me/signup-form", readRateLimiter, requireAuth, async (req, re
     });
 });
 
+router.get("/users/:userId/signup-form", readRateLimiter, requireAllRoles(["admin"]), async (req, res) => {
+    const userId = BigInt(req.params.userId as string);
+
+    const em = getEntityManager();
+    const form = await findOneOrCreate(em, SignupForm, {user: userId});
+    res.json({
+        success: true,
+        form,
+    });
+});
+
 router.patch("/users/me/signup-form", writeRateLimiter, requireAuth, async (req, res) => {
     const userId = req.auth!.id;
 
