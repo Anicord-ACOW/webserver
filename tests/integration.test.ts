@@ -100,7 +100,6 @@ describe("integration test", () => {
     });
 
     it("doesn't allow non admins to create seasons", async () => {
-        vi.setSystemTime("2025-05-12T16:00:00.000Z");
         const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons`, {
             method: "PUT",
@@ -117,26 +116,7 @@ describe("integration test", () => {
         expect(response.status).toBe(403);
     });
 
-    it("allows admins to create seasons", async () => {
-        vi.setSystemTime("2025-05-12T16:00:00.000Z");
-        const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
-        const response = await fetch(`${baseUrl}/seasons`, {
-            method: "PUT",
-            headers: {
-                Authorization: token,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                name: "Real Season",
-                signupsStart: "2026-05-13T00:00:00.000Z",
-                signupsEnd: "2026-05-14T00:00:00.000Z",
-            })
-        });
-        expect(response.status).toBe(200);
-    });
-
     it("doesn't allow inconsistent dates", async () => {
-        vi.setSystemTime("2025-05-12T16:00:00.000Z");
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         // signups before now
         const response = await fetch(`${baseUrl}/seasons`, {
@@ -147,8 +127,8 @@ describe("integration test", () => {
             },
             body: JSON.stringify({
                 name: "Real Season",
-                signupsStart: "2026-05-12T00:00:00.000Z",
-                signupsEnd: "2026-05-14T00:00:00.000Z",
+                signupsStart: "2000-05-12T00:00:00.000Z",
+                signupsEnd: "2099-05-14T00:00:00.000Z",
             }),
         });
         expect(response.status).toBe(400);
@@ -162,15 +142,14 @@ describe("integration test", () => {
             },
             body: JSON.stringify({
                 name: "Real Season",
-                signupsStart: "2026-05-15T00:00:00.000Z",
-                signupsEnd: "2026-05-14T00:00:00.000Z",
+                signupsStart: "2099-05-15T00:00:00.000Z",
+                signupsEnd: "2000-05-14T00:00:00.000Z",
             }),
         });
         expect(response2.status).toBe(400);
     });
 
-    it("doesn't allow season creation if the season is already in progress", async () => {
-        vi.setSystemTime("2025-05-12T16:00:00.000Z");
+    it("allows admins to create seasons", async () => {
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons`, {
             method: "PUT",
@@ -180,6 +159,27 @@ describe("integration test", () => {
             },
             body: JSON.stringify({
                 name: "Real Season",
+                signupsStart: new Date(Date.now() + 60000).toISOString(),
+                signupsEnd: new Date(Date.now() + 120000).toISOString(),
+            })
+        });
+        expect(response.status).toBe(200);
+
+        vi.useRealTimers();
+    });
+
+    it("doesn't allow season creation if the season is already in progress", async () => {
+        const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons`, {
+            method: "PUT",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name: "Real Season",
+                signupsStart: new Date(Date.now() + 60000).toISOString(),
+                signupsEnd: new Date(Date.now() + 120000).toISOString(),
             })
         });
         const body = await response.json();
@@ -199,8 +199,6 @@ describe("integration test", () => {
             season: {
                 id: "1",
                 name: "Real Season",
-                signupsStart: "2026-05-13T00:00:00.000Z",
-                signupsEnd: "2026-05-14T00:00:00.000Z",
                 completed: false,
             },
         });
@@ -215,8 +213,6 @@ describe("integration test", () => {
             season: {
                 id: "1",
                 name: "Real Season",
-                signupsStart: "2026-05-13T00:00:00.000Z",
-                signupsEnd: "2026-05-14T00:00:00.000Z",
                 completed: false,
             },
         });

@@ -18,6 +18,9 @@ router.put("/seasons", writeRateLimiter, requireAllRoles(["admin"]), async (req,
     const result = parseModelPatch(req.body, SeasonSchema, {
         exclude: ["completed"],
     });
+    // date consistency check
+    if (!result.signupsStart || result.signupsStart < new Date()) throw new APIError(400, "Signups start must be in the future");
+    if (!result.signupsEnd || result.signupsEnd < result.signupsStart) throw new APIError(400, "Signups end must be after signups start");
 
     const season = req.em.create(Season, result, {partial: true});
     await req.em.flush();
