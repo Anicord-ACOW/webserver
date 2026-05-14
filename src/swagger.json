@@ -1,0 +1,1108 @@
+{
+  "openapi" : "3.0.0",
+  "servers" : [ {
+    "description" : "sayori",
+    "url" : "https://acow-api-dev.sayori.link"
+  } ],
+  "info" : {
+    "description" : "This is a simple API",
+    "version" : "1.0.0",
+    "title" : "ACOW API",
+    "contact" : {
+      "email" : "you@your-company.com"
+    },
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "tags" : [ {
+    "name" : "admins",
+    "description" : "Secured Admin-only calls"
+  }, {
+    "name" : "users",
+    "description" : "Operations available to regular users"
+  } ],
+  "paths" : {
+    "/users/me" : {
+      "get" : {
+        "tags" : [ "users" ],
+        "summary" : "Retrieves current user",
+        "operationId" : "get-users-me",
+        "description" : "",
+        "responses" : {
+          "200" : {
+            "description" : "The current user",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean",
+                      "x-stoplight" : {
+                        "id" : "pif1whmdt9bog"
+                      },
+                      "default" : true
+                    },
+                    "user" : {
+                      "$ref" : "#/components/schemas/User"
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "user" : {
+                        "id" : "308152268249628672",
+                        "username" : "_ganyuwu",
+                        "roles" : [ "admin" ],
+                        "createdAt" : "2026-05-07T19:31:56.000Z",
+                        "updatedAt" : "2026-05-07T19:31:56.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}" : {
+      "get" : {
+        "summary" : "Retrieve user by id",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "x-examples" : {
+                    "Example 1" : {
+                      "success" : true,
+                      "user" : {
+                        "id" : "308152268249628672",
+                        "username" : "_ganyuwu",
+                        "roles" : [ "admin" ],
+                        "createdAt" : "2026-05-07T19:31:56.000Z",
+                        "updatedAt" : "2026-05-07T19:31:56.000Z"
+                      }
+                    }
+                  },
+                  "required" : [ "success", "user" ],
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean",
+                      "default" : true
+                    },
+                    "user" : {
+                      "$ref" : "#/components/schemas/User"
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "user" : {
+                        "id" : "308152268249628672",
+                        "username" : "_ganyuwu",
+                        "roles" : [ "admin" ],
+                        "createdAt" : "2026-05-07T19:31:56.000Z",
+                        "updatedAt" : "2026-05-07T19:31:56.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean",
+                      "x-stoplight" : {
+                        "id" : "nj5dttl2hbyko"
+                      },
+                      "default" : false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "get-users-id"
+      },
+      "parameters" : [ {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "userId",
+        "in" : "path",
+        "required" : true
+      } ]
+    },
+    "/users/me/signup-form" : {
+      "get" : {
+        "summary" : "Retrieve current user's signup form",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "x-examples" : {
+                    "Example 1" : {
+                      "success" : true,
+                      "form" : {
+                        "id" : "7",
+                        "user" : "308152268249628672",
+                        "repServer" : "Frieren",
+                        "anilistUrl" : "",
+                        "preferredMedium" : "",
+                        "acceptingMedium" : "",
+                        "preferredGenres" : "",
+                        "bannedGenres" : "",
+                        "extremeSpecialParticipation" : false,
+                        "sponsorParticipation" : false,
+                        "aidParadeParticipation" : false,
+                        "gameProfileUrl" : null,
+                        "pcPower" : "POTATO",
+                        "hasXboxGamePass" : null,
+                        "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                        "challengeLevelPreference" : null,
+                        "gameLengthPreference" : null,
+                        "competitiveBlitzParticipation" : false,
+                        "casualBlitzParticipation" : false,
+                        "bookClubParticipation" : false,
+                        "gameClubParticipation" : false,
+                        "notesForStaff" : "",
+                        "notesForContractor" : "",
+                        "createdAt" : "2026-05-07T20:56:38.000Z",
+                        "updatedAt" : "2026-05-07T21:53:17.000Z"
+                      }
+                    }
+                  },
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean"
+                    },
+                    "form" : {
+                      "$ref" : "#/components/schemas/SignUpForm"
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "form" : {
+                        "id" : "7",
+                        "user" : "308152268249628672",
+                        "repServer" : "Frieren",
+                        "anilistUrl" : "",
+                        "preferredMedium" : "",
+                        "acceptingMedium" : "",
+                        "preferredGenres" : "",
+                        "bannedGenres" : "",
+                        "extremeSpecialParticipation" : false,
+                        "sponsorParticipation" : false,
+                        "aidParadeParticipation" : false,
+                        "gameProfileUrl" : null,
+                        "pcPower" : "POTATO",
+                        "hasXboxGamePass" : null,
+                        "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                        "challengeLevelPreference" : null,
+                        "gameLengthPreference" : null,
+                        "competitiveBlitzParticipation" : false,
+                        "casualBlitzParticipation" : false,
+                        "bookClubParticipation" : false,
+                        "gameClubParticipation" : false,
+                        "notesForStaff" : "",
+                        "notesForContractor" : "",
+                        "createdAt" : "2026-05-07T20:56:38.000Z",
+                        "updatedAt" : "2026-05-07T21:53:17.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "get-users-signup-template-me"
+      },
+      "patch" : {
+        "summary" : "Update current user's signup form",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "string",
+                      "x-stoplight" : {
+                        "id" : "a13xzenzop3mz"
+                      }
+                    },
+                    "form" : {
+                      "$ref" : "#/components/schemas/SignUpForm"
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "form" : {
+                        "id" : "7",
+                        "user" : "308152268249628672",
+                        "repServer" : "Frieren",
+                        "anilistUrl" : "",
+                        "preferredMedium" : "",
+                        "acceptingMedium" : "",
+                        "preferredGenres" : "",
+                        "bannedGenres" : "",
+                        "extremeSpecialParticipation" : false,
+                        "sponsorParticipation" : false,
+                        "aidParadeParticipation" : false,
+                        "gameProfileUrl" : null,
+                        "pcPower" : "POTATO",
+                        "hasXboxGamePass" : null,
+                        "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                        "challengeLevelPreference" : null,
+                        "gameLengthPreference" : null,
+                        "competitiveBlitzParticipation" : false,
+                        "casualBlitzParticipation" : false,
+                        "bookClubParticipation" : false,
+                        "gameClubParticipation" : false,
+                        "notesForStaff" : "",
+                        "notesForContractor" : "",
+                        "createdAt" : "2026-05-07T20:56:38.000Z",
+                        "updatedAt" : "2026-05-07T21:53:17.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "patch-users-signup-template-me",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SignUpFormEditable"
+              },
+              "examples" : {
+                "Example 1" : {
+                  "value" : {
+                    "repServer" : "Frieren",
+                    "anilistUrl" : "",
+                    "preferredMedium" : "",
+                    "acceptingMedium" : "",
+                    "preferredGenres" : "",
+                    "bannedGenres" : "",
+                    "extremeSpecialParticipation" : false,
+                    "sponsorParticipation" : false,
+                    "aidParadeParticipation" : false,
+                    "gameProfileUrl" : null,
+                    "pcPower" : "POTATO",
+                    "hasXboxGamePass" : null,
+                    "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                    "challengeLevelPreference" : null,
+                    "gameLengthPreference" : null,
+                    "competitiveBlitzParticipation" : false,
+                    "casualBlitzParticipation" : false,
+                    "bookClubParticipation" : false,
+                    "gameClubParticipation" : false,
+                    "notesForStaff" : "",
+                    "notesForContractor" : ""
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters" : [ ]
+    },
+    "/users/{userId}/signup-form" : {
+      "get" : {
+        "summary" : "[Admin] Retrieve user's signup form",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "x-examples" : {
+                    "Example 1" : {
+                      "success" : true,
+                      "form" : {
+                        "id" : "7",
+                        "user" : "308152268249628672",
+                        "repServer" : "Frieren",
+                        "anilistUrl" : "",
+                        "preferredMedium" : "",
+                        "acceptingMedium" : "",
+                        "preferredGenres" : "",
+                        "bannedGenres" : "",
+                        "extremeSpecialParticipation" : false,
+                        "sponsorParticipation" : false,
+                        "aidParadeParticipation" : false,
+                        "gameProfileUrl" : null,
+                        "pcPower" : "POTATO",
+                        "hasXboxGamePass" : null,
+                        "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                        "challengeLevelPreference" : null,
+                        "gameLengthPreference" : null,
+                        "competitiveBlitzParticipation" : false,
+                        "casualBlitzParticipation" : false,
+                        "bookClubParticipation" : false,
+                        "gameClubParticipation" : false,
+                        "notesForStaff" : "",
+                        "notesForContractor" : "",
+                        "createdAt" : "2026-05-07T20:56:38.000Z",
+                        "updatedAt" : "2026-05-07T21:53:17.000Z"
+                      }
+                    }
+                  },
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean"
+                    },
+                    "form" : {
+                      "$ref" : "#/components/schemas/SignUpForm"
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "form" : {
+                        "id" : "7",
+                        "user" : "308152268249628672",
+                        "repServer" : "Frieren",
+                        "anilistUrl" : "",
+                        "preferredMedium" : "",
+                        "acceptingMedium" : "",
+                        "preferredGenres" : "",
+                        "bannedGenres" : "",
+                        "extremeSpecialParticipation" : false,
+                        "sponsorParticipation" : false,
+                        "aidParadeParticipation" : false,
+                        "gameProfileUrl" : null,
+                        "pcPower" : "POTATO",
+                        "hasXboxGamePass" : null,
+                        "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                        "challengeLevelPreference" : null,
+                        "gameLengthPreference" : null,
+                        "competitiveBlitzParticipation" : false,
+                        "casualBlitzParticipation" : false,
+                        "bookClubParticipation" : false,
+                        "gameClubParticipation" : false,
+                        "notesForStaff" : "",
+                        "notesForContractor" : "",
+                        "createdAt" : "2026-05-07T20:56:38.000Z",
+                        "updatedAt" : "2026-05-07T21:53:17.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "get-users-signup-template"
+      },
+      "patch" : {
+        "summary" : "[Admin] Update user's signup form",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "string"
+                    },
+                    "form" : {
+                      "$ref" : "#/components/schemas/SignUpForm"
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "form" : {
+                        "id" : "7",
+                        "user" : "308152268249628672",
+                        "repServer" : "Frieren",
+                        "anilistUrl" : "",
+                        "preferredMedium" : "",
+                        "acceptingMedium" : "",
+                        "preferredGenres" : "",
+                        "bannedGenres" : "",
+                        "extremeSpecialParticipation" : false,
+                        "sponsorParticipation" : false,
+                        "aidParadeParticipation" : false,
+                        "gameProfileUrl" : null,
+                        "pcPower" : "POTATO",
+                        "hasXboxGamePass" : null,
+                        "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                        "challengeLevelPreference" : null,
+                        "gameLengthPreference" : null,
+                        "competitiveBlitzParticipation" : false,
+                        "casualBlitzParticipation" : false,
+                        "bookClubParticipation" : false,
+                        "gameClubParticipation" : false,
+                        "notesForStaff" : "",
+                        "notesForContractor" : "",
+                        "createdAt" : "2026-05-07T20:56:38.000Z",
+                        "updatedAt" : "2026-05-07T21:53:17.000Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "patch-users-signup-template",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SignUpFormEditable"
+              },
+              "examples" : {
+                "Example 1" : {
+                  "value" : {
+                    "repServer" : "Frieren",
+                    "anilistUrl" : "",
+                    "preferredMedium" : "",
+                    "acceptingMedium" : "",
+                    "preferredGenres" : "",
+                    "bannedGenres" : "",
+                    "extremeSpecialParticipation" : false,
+                    "sponsorParticipation" : false,
+                    "aidParadeParticipation" : false,
+                    "gameProfileUrl" : null,
+                    "pcPower" : "POTATO",
+                    "hasXboxGamePass" : null,
+                    "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+                    "challengeLevelPreference" : null,
+                    "gameLengthPreference" : null,
+                    "competitiveBlitzParticipation" : false,
+                    "casualBlitzParticipation" : false,
+                    "bookClubParticipation" : false,
+                    "gameClubParticipation" : false,
+                    "notesForStaff" : "",
+                    "notesForContractor" : ""
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters" : [ {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "userId",
+        "in" : "path",
+        "required" : true,
+        "description" : "User id associated with the form"
+      } ]
+    },
+    "/seasons/{seasonId}" : {
+      "get" : {
+        "summary" : "Retrieves the a season by id",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : { }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "season" : {
+                        "id" : "1",
+                        "name" : "Season 1",
+                        "signupsStart" : "2026-05-13T00:00:00Z",
+                        "signupsEnd" : "2026-05-16T00:00:00Z",
+                        "completed" : false,
+                        "contractTypes" : [ ],
+                        "createdAt" : "2026-05-13T00:00:00Z",
+                        "updatedAt" : "2026-05-13T00:00:00Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "get-seasons-current"
+      },
+      "parameters" : [ {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "seasonId",
+        "in" : "path",
+        "required" : true,
+        "description" : "Season id, \"current\" is aliased to the current season"
+      } ]
+    },
+    "/seasons" : {
+      "put" : {
+        "summary" : "[Admin] Create a new season",
+        "tags" : [ ],
+        "responses" : { },
+        "operationId" : "put-seasons",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SeasonEditable"
+              },
+              "examples" : {
+                "Example 1" : {
+                  "value" : {
+                    "id" : "1",
+                    "name" : "Season 1",
+                    "signupsStart" : "2026-05-13T00:00:00Z",
+                    "signupsEnd" : "2026-05-16T00:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/seasons/{seasonid}/signup" : {
+      "parameters" : [ {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "seasonid",
+        "in" : "path",
+        "required" : true
+      }, {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "seasonid",
+        "in" : "path",
+        "required" : true
+      }, {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "seasonid",
+        "in" : "path",
+        "required" : true
+      }, {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "seasonid",
+        "in" : "path",
+        "required" : true
+      } ],
+      "get" : {
+        "summary" : "Retrieve current user's signup status",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean"
+                    },
+                    "signedUp" : {
+                      "type" : "boolean"
+                    }
+                  },
+                  "x-examples" : {
+                    "Example 1" : {
+                      "success" : true,
+                      "signedUp" : true
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "signedUp" : true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "get-seasons-seasonid-signup",
+        "description" : "Duplicate operations are idempotent."
+      },
+      "post" : {
+        "summary" : "Sign up for the season",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "Duplicate operations are idempotent.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean"
+                    }
+                  },
+                  "x-examples" : {
+                    "Example 1" : {
+                      "success" : true
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "post-seasons-seasonid-signup",
+        "description" : "Duplicate operations are idempotent."
+      },
+      "delete" : {
+        "summary" : "Remove signup for the season",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean"
+                    }
+                  },
+                  "x-examples" : {
+                    "Example 1" : {
+                      "success" : true
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "delete-seasons-seasonid-signup",
+        "description" : "Duplicate operations are idempotent."
+      }
+    },
+    "/seasons/{seasonid}/signups" : {
+      "parameters" : [ {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "seasonid",
+        "in" : "path",
+        "required" : true
+      } ],
+      "get" : {
+        "summary" : "[Admin] Retrieve the season's signup list",
+        "tags" : [ ],
+        "responses" : { },
+        "operationId" : "get-seasons-seasonid-signups"
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "User" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "username" : {
+            "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          }
+        },
+        "x-examples" : {
+          "Example 1" : {
+            "id" : "308152268249628672",
+            "username" : "_ganyuwu",
+            "roles" : [ "admin" ],
+            "createdAt" : "2026-05-07T19:31:56.000Z",
+            "updatedAt" : "2026-05-07T19:31:56.000Z"
+          }
+        }
+      },
+      "SignUpForm" : {
+        "type" : "object",
+        "x-examples" : {
+          "Example 1" : {
+            "id" : "7",
+            "user" : "308152268249628672",
+            "repServer" : "Frieren",
+            "anilistUrl" : "",
+            "preferredMedium" : "",
+            "acceptingMedium" : "",
+            "preferredGenres" : "",
+            "bannedGenres" : "",
+            "extremeSpecialParticipation" : false,
+            "sponsorParticipation" : false,
+            "aidParadeParticipation" : false,
+            "gameProfileUrl" : null,
+            "pcPower" : "POTATO",
+            "hasXboxGamePass" : null,
+            "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+            "challengeLevelPreference" : null,
+            "gameLengthPreference" : null,
+            "competitiveBlitzParticipation" : false,
+            "casualBlitzParticipation" : false,
+            "bookClubParticipation" : false,
+            "gameClubParticipation" : false,
+            "notesForStaff" : "",
+            "notesForContractor" : "",
+            "createdAt" : "2026-05-07T20:56:38.000Z",
+            "updatedAt" : "2026-05-07T21:53:17.000Z"
+          }
+        },
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "user" : {
+            "type" : "string"
+          },
+          "repServer" : {
+            "type" : "string"
+          },
+          "anilistUrl" : {
+            "type" : "string"
+          },
+          "preferredMedium" : {
+            "type" : "string"
+          },
+          "acceptingMedium" : {
+            "type" : "string"
+          },
+          "preferredGenres" : {
+            "type" : "string"
+          },
+          "bannedGenres" : {
+            "type" : "string"
+          },
+          "extremeSpecialParticipation" : {
+            "type" : "boolean"
+          },
+          "sponsorParticipation" : {
+            "type" : "boolean"
+          },
+          "aidParadeParticipation" : {
+            "type" : "boolean"
+          },
+          "gameProfileUrl" : {
+            "type" : "boolean"
+          },
+          "pcPower" : {
+            "type" : "string"
+          },
+          "hasXboxGamePass" : {
+            "type" : "boolean",
+            "nullable" : true
+          },
+          "preferredGameGenres" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "challengeLevelPreference" : {
+            "type" : "boolean",
+            "nullable" : true
+          },
+          "gameLengthPreference" : {
+            "type" : "boolean",
+            "nullable" : true
+          },
+          "competitiveBlitzParticipation" : {
+            "type" : "boolean"
+          },
+          "casualBlitzParticipation" : {
+            "type" : "boolean"
+          },
+          "bookClubParticipation" : {
+            "type" : "boolean"
+          },
+          "gameClubParticipation" : {
+            "type" : "boolean"
+          },
+          "notesForStaff" : {
+            "type" : "string"
+          },
+          "notesForContractor" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SignUpFormEditable" : {
+        "type" : "object",
+        "x-examples" : {
+          "Example 1" : {
+            "repServer" : "Frieren",
+            "anilistUrl" : "",
+            "preferredMedium" : "",
+            "acceptingMedium" : "",
+            "preferredGenres" : "",
+            "bannedGenres" : "",
+            "extremeSpecialParticipation" : false,
+            "sponsorParticipation" : false,
+            "aidParadeParticipation" : false,
+            "gameProfileUrl" : null,
+            "pcPower" : "POTATO",
+            "hasXboxGamePass" : null,
+            "preferredGameGenres" : [ "FIGHTING", "DATING" ],
+            "challengeLevelPreference" : null,
+            "gameLengthPreference" : null,
+            "competitiveBlitzParticipation" : false,
+            "casualBlitzParticipation" : false,
+            "bookClubParticipation" : false,
+            "gameClubParticipation" : false,
+            "notesForStaff" : "",
+            "notesForContractor" : ""
+          }
+        },
+        "title" : "SignUpFormEditable",
+        "properties" : {
+          "repServer" : {
+            "type" : "string"
+          },
+          "anilistUrl" : {
+            "type" : "string"
+          },
+          "preferredMedium" : {
+            "type" : "string"
+          },
+          "acceptingMedium" : {
+            "type" : "string"
+          },
+          "preferredGenres" : {
+            "type" : "string"
+          },
+          "bannedGenres" : {
+            "type" : "string"
+          },
+          "extremeSpecialParticipation" : {
+            "type" : "boolean"
+          },
+          "sponsorParticipation" : {
+            "type" : "boolean"
+          },
+          "aidParadeParticipation" : {
+            "type" : "boolean"
+          },
+          "gameProfileUrl" : {
+            "type" : "boolean"
+          },
+          "pcPower" : {
+            "type" : "string"
+          },
+          "hasXboxGamePass" : {
+            "type" : "boolean",
+            "nullable" : true
+          },
+          "preferredGameGenres" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "challengeLevelPreference" : {
+            "type" : "boolean",
+            "nullable" : true
+          },
+          "gameLengthPreference" : {
+            "type" : "boolean",
+            "nullable" : true
+          },
+          "competitiveBlitzParticipation" : {
+            "type" : "boolean"
+          },
+          "casualBlitzParticipation" : {
+            "type" : "boolean"
+          },
+          "bookClubParticipation" : {
+            "type" : "boolean"
+          },
+          "gameClubParticipation" : {
+            "type" : "boolean"
+          },
+          "notesForStaff" : {
+            "type" : "string"
+          },
+          "notesForContractor" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Season" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "signupsStart" : {
+            "type" : "string"
+          },
+          "signupsEnd" : {
+            "type" : "string"
+          },
+          "completed" : {
+            "type" : "boolean"
+          },
+          "contractTypes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "properties" : { }
+            }
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string"
+          }
+        },
+        "x-examples" : {
+          "Example 1" : {
+            "id" : "1",
+            "name" : "Season 1",
+            "signupsStart" : "2026-05-13T00:00:00Z",
+            "signupsEnd" : "2026-05-16T00:00:00Z",
+            "completed" : false,
+            "contractTypes" : [ ],
+            "createdAt" : "2026-05-13T00:00:00Z",
+            "updatedAt" : "2026-05-13T00:00:00Z"
+          }
+        }
+      },
+      "SeasonEditable" : {
+        "type" : "object",
+        "x-examples" : {
+          "Example 1" : {
+            "id" : "1",
+            "name" : "Season 1",
+            "signupsStart" : "2026-05-13T00:00:00Z",
+            "signupsEnd" : "2026-05-16T00:00:00Z"
+          }
+        },
+        "title" : "SeasonEditable",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "signupsStart" : {
+            "type" : "string"
+          },
+          "signupsEnd" : {
+            "type" : "string"
+          }
+        },
+        "description" : ""
+      }
+    },
+    "securitySchemes" : {
+      "access_token" : {
+        "name" : "Authorization",
+        "type" : "apiKey",
+        "in" : "header"
+      }
+    }
+  },
+  "security" : [ {
+    "access_token" : [ ]
+  } ]
+}
