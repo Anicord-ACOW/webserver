@@ -1,6 +1,6 @@
 import {type Server} from "node:http";
 import type {Express} from "express";
-import {afterAll, beforeAll, describe, expect, it, vi} from "vitest";
+import {afterAll, afterEach, beforeAll, describe, expect, it, vi} from "vitest";
 import {createAuthToken} from "@/helpers/auth-tokens";
 
 let server: Server;
@@ -10,6 +10,13 @@ let closeAppDatabase: () => Promise<void>;
 let originalMysql: string | undefined;
 
 describe("integration test", () => {
+    /**
+     * Test timeline:
+     * 2026-05-12T16:00:00.000Z - server starts, create season and contract types
+     * 2026-05-13T00:00:00.000Z - season signups start
+     * 2026-05-14T00:00:00.000Z - season signups end
+     * 2026-05-15T00:00:00.000Z - contract deadline
+     */
     beforeAll(async () => {
         // create db
         const {createMockDb} = await import("./helpers/mock-db");
@@ -36,6 +43,8 @@ describe("integration test", () => {
                 resolve();
             });
         });
+
+        vi.setSystemTime("2026-05-12T16:00:00.000Z");
     }, 20000);
 
     afterAll(async () => {
@@ -117,6 +126,8 @@ describe("integration test", () => {
     });
 
     it("doesn't allow inconsistent dates", async () => {
+        vi.setSystemTime("2026-05-12T16:00:00.000Z");
+
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         // signups before now
         const response = await fetch(`${baseUrl}/seasons`, {
@@ -127,8 +138,8 @@ describe("integration test", () => {
             },
             body: JSON.stringify({
                 name: "Real Season",
-                signupsStart: "2000-05-12T00:00:00.000Z",
-                signupsEnd: "2099-05-14T00:00:00.000Z",
+                signupsStart: "2026-05-12T00:00:00.000Z",
+                signupsEnd: "2026-05-14T00:00:00.000Z",
             }),
         });
         expect(response.status).toBe(400);
@@ -142,8 +153,8 @@ describe("integration test", () => {
             },
             body: JSON.stringify({
                 name: "Real Season",
-                signupsStart: "2099-05-15T00:00:00.000Z",
-                signupsEnd: "2000-05-14T00:00:00.000Z",
+                signupsStart: "2026-05-15T00:00:00.000Z",
+                signupsEnd: "2026-05-14T00:00:00.000Z",
             }),
         });
         expect(response2.status).toBe(400);
@@ -159,13 +170,11 @@ describe("integration test", () => {
             },
             body: JSON.stringify({
                 name: "Real Season",
-                signupsStart: new Date(Date.now() + 60000).toISOString(),
-                signupsEnd: new Date(Date.now() + 120000).toISOString(),
+                signupsStart: "2026-05-13T00:00:00.000Z",
+                signupsEnd: "2026-05-14T00:00:00.000Z",
             })
         });
         expect(response.status).toBe(200);
-
-        vi.useRealTimers();
     });
 
     it("doesn't allow season creation if the season is already in progress", async () => {
@@ -296,6 +305,197 @@ describe("integration test", () => {
                 pcPower: "POTATO",
                 preferredGameGenres: ["CASUAL"],
             },
+        });
+    });
+
+    it("doesn't allow users to signup before the signup period", async () => {
+        const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "POST",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body = await response.json();
+        expect(response.status).toBe(400);
+        expect(body).toMatchObject({
+            success: false,
+            error: "Signups have not started",
+        });
+    });
+
+    it("allow users to signup during the signup period", async () => {
+        vi.setSystemTime("2026-05-13T00:00:00.001Z");
+
+        const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "POST",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body = await response.json();
+        expect(response.status).toBe(200);
+        expect(body).toMatchObject({
+            success: true,
+        });
+
+        const response2 = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "POST",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body2 = await response2.json();
+        expect(response2.status).toBe(200);
+        expect(body2).toMatchObject({
+            success: true,
+        });
+
+        const token1 = createAuthToken({sub: "1"}, {expiresIn: "1m"});
+        const response3 = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "POST",
+            headers: {
+                Authorization: token1,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body3 = await response3.json();
+        expect(response3.status).toBe(200);
+        expect(body3).toMatchObject({
+            success: true,
+        });
+
+        const token3 = createAuthToken({sub: "3"}, {expiresIn: "1m"});
+        const response4 = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "POST",
+            headers: {
+                Authorization: token3,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body4 = await response4.json();
+        expect(response4.status).toBe(200);
+        expect(body4).toMatchObject({
+            success: true,
+        });
+    });
+
+    it("allows users to remove signup during the signup period", async () => {
+        const token3 = createAuthToken({sub: "3"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "DELETE",
+            headers: {
+                Authorization: token3,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body = await response.json();
+        expect(response.status).toBe(200);
+        expect(body).toMatchObject({
+            success: true,
+        });
+
+        const response4 = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "DELETE",
+            headers: {
+                Authorization: token3,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body4 = await response4.json();
+        expect(response4.status).toBe(200);
+        expect(body4).toMatchObject({
+            success: true,
+        });
+    });
+
+    it("returns the correct signup status", async () => {
+        const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        });
+        const body = await response.json();
+        expect(body).toMatchObject({
+            success: true,
+            signedUp: true,
+        });
+
+        const token3 = createAuthToken({sub: "3"}, {expiresIn: "1m"});
+        const response3 = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "GET",
+            headers: {
+                Authorization: token3,
+                "Content-Type": "application/json",
+            },
+        });
+        const body3 = await response3.json();
+        expect(body3).toMatchObject({
+            success: true,
+            signedUp: false,
+        });
+    });
+
+    it("signups are idempotent", async () => {
+        const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/signups`, {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        });
+        const body = await response.json();
+        expect(body.signups.filter((x: any) => x.user.id === "2").length).toBe(1);
+        expect(body.signups.filter((x: any) => x.user.id === "1").length).toBe(1);
+        expect(body.signups.length).toBe(2);
+    });
+
+    it("doesn't allow users to change signup after the signup period", async () => {
+        vi.setSystemTime("2026-05-14T00:00:00.001Z");
+
+        const token3 = createAuthToken({sub: "3"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "DELETE",
+            headers: {
+                Authorization: token3,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body = await response.json();
+        expect(response.status).toBe(400);
+        expect(body).toMatchObject({
+            success: false,
+        });
+
+        const token = createAuthToken({sub: "4"}, {expiresIn: "1m"});
+        const response2 = await fetch(`${baseUrl}/seasons/1/signup`, {
+            method: "POST",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+        const body2 = await response2.json();
+        expect(response2.status).toBe(400);
+        expect(body).toMatchObject({
+            success: false,
         });
     });
 });

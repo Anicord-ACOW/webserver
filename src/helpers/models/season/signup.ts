@@ -89,7 +89,7 @@ SignUpFormSchema.setClass(SignupForm);
 export const SignUpSchema = defineEntity({
     name: "SignUp",
     properties: {
-        user: () => p.manyToOne(User).mapToPk().joinColumn("user").referenceColumnName("id").primary(),
+        user: () => p.manyToOne(User).joinColumn("user").referenceColumnName("id").primary(),
         season: p.manyToOne(Season).mapToPk().joinColumn("season").referenceColumnName("id").primary(),
 
         createdAt: p.datetime().onCreate(() => new Date()),

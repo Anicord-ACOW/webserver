@@ -5,6 +5,7 @@ import {Season, SeasonSchema} from "@/helpers/models/season/season";
 import {parseModelPatch} from "@/helpers/patch";
 import contracts from "@/routes/seasons/contracts";
 import {APIError} from "@/helpers/api-error";
+import signup from "@/routes/seasons/signup";
 
 const router = Router();
 
@@ -40,5 +41,6 @@ router.get("/seasons/:id", readRateLimiter, async (req, res) => {
 });
 
 router.use("/", contracts);
+router.use("/", signup);
 
 export default router;
