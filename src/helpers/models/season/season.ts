@@ -1,4 +1,4 @@
-import {defineEntity, p} from "@mikro-orm/core";
+import {defineEntity, EntityManager, p} from "@mikro-orm/core";
 import {ContractTypeSchema} from "@/helpers/models/contracts/contract-type";
 
 /**
@@ -23,6 +23,14 @@ export const SeasonSchema = defineEntity({
     },
 });
 
-export class Season extends SeasonSchema.class {}
+export class Season extends SeasonSchema.class {
+    static getSeasonById(em: EntityManager, seasonId: string) {
+        if (seasonId === "current") {
+            return em.findOne(Season, {completed: false}, {orderBy: {id: "desc"}});
+        } else {
+            return em.findOne(Season, seasonId);
+        }
+    }
+}
 
 SeasonSchema.setClass(Season);

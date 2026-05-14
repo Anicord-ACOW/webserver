@@ -28,14 +28,8 @@ router.put("/seasons", writeRateLimiter, requireAllRoles(["admin"]), async (req,
     res.json({success: true, season});
 });
 
-router.get("/seasons/current", readRateLimiter, async (req, res) => {
-    const season = await req.em.findOne(Season, {completed: false});
-    if (season === null) throw new APIError(404, "No active season");
-    res.json({success: true, season});
-});
-
 router.get("/seasons/:id", readRateLimiter, async (req, res) => {
-    const season = await req.em.findOne(Season, req.params.id);
+    const season = await Season.getSeasonById(req.em, req.params.id as string);
     if (season === null) throw new APIError(404, "Season not found");
     res.json({success: true, season});
 });
