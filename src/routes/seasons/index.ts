@@ -9,7 +9,7 @@ import signup from "@/routes/seasons/signup";
 
 const router = Router();
 
-router.put("/seasons", writeRateLimiter, requireAllRoles(["admin"]), async (req, res) => {
+router.post("/seasons", writeRateLimiter, requireAllRoles(["admin"]), async (req, res) => {
     // check if there's an active season
     const incompleteSeasons = await req.em.find(Season, {completed: false});
     if (incompleteSeasons.length > 0) {

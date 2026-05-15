@@ -552,7 +552,17 @@
               "application/json" : {
                 "schema" : {
                   "type" : "object",
-                  "properties" : { }
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean",
+                      "x-stoplight" : {
+                        "id" : "1jv0ys9q0tidt"
+                      }
+                    },
+                    "season" : {
+                      "$ref" : "#/components/schemas/Season"
+                    }
+                  }
                 },
                 "examples" : {
                   "Example 1" : {
@@ -588,10 +598,50 @@
       } ]
     },
     "/seasons" : {
-      "put" : {
+      "post" : {
         "summary" : "[Admin] Create a new season",
         "tags" : [ ],
-        "responses" : { },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean",
+                      "x-stoplight" : {
+                        "id" : "oc5j6c3dxqn1y"
+                      }
+                    },
+                    "season" : {
+                      "$ref" : "#/components/schemas/Season"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "If the request fails validation",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GenericFailureResponse"
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : false,
+                      "error" : "Cannot create a new season while there is an active season"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "operationId" : "put-seasons",
         "requestBody" : {
           "content" : {
@@ -616,27 +666,6 @@
     },
     "/seasons/{seasonid}/signup" : {
       "parameters" : [ {
-        "schema" : {
-          "type" : "string"
-        },
-        "name" : "seasonid",
-        "in" : "path",
-        "required" : true
-      }, {
-        "schema" : {
-          "type" : "string"
-        },
-        "name" : "seasonid",
-        "in" : "path",
-        "required" : true
-      }, {
-        "schema" : {
-          "type" : "string"
-        },
-        "name" : "seasonid",
-        "in" : "path",
-        "required" : true
-      }, {
         "schema" : {
           "type" : "string"
         },
@@ -693,17 +722,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "object",
-                  "properties" : {
-                    "success" : {
-                      "type" : "boolean"
-                    }
-                  },
-                  "x-examples" : {
-                    "Example 1" : {
-                      "success" : true
-                    }
-                  }
+                  "$ref" : "#/components/schemas/GenericSuccessResponse"
                 },
                 "examples" : {
                   "Example 1" : {
@@ -728,17 +747,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "object",
-                  "properties" : {
-                    "success" : {
-                      "type" : "boolean"
-                    }
-                  },
-                  "x-examples" : {
-                    "Example 1" : {
-                      "success" : true
-                    }
-                  }
+                  "$ref" : "#/components/schemas/GenericSuccessResponse"
                 },
                 "examples" : {
                   "Example 1" : {
@@ -767,7 +776,53 @@
       "get" : {
         "summary" : "[Admin] Retrieve the season's signup list",
         "tags" : [ ],
-        "responses" : { },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "x-examples" : {
+                    "Example 1" : {
+                      "success" : true,
+                      "signups" : [ ]
+                    }
+                  },
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean"
+                    },
+                    "signups" : {
+                      "type" : "array",
+                      "items" : {
+                        "type" : "object",
+                        "properties" : {
+                          "user" : {
+                            "$ref" : "#/components/schemas/User"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "signups" : [ {
+                        "user" : {
+                          "id" : 1,
+                          "username" : "user1"
+                        }
+                      } ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "operationId" : "get-seasons-seasonid-signups"
       }
     }
@@ -1078,9 +1133,6 @@
         },
         "title" : "SeasonEditable",
         "properties" : {
-          "id" : {
-            "type" : "string"
-          },
           "name" : {
             "type" : "string"
           },
@@ -1090,8 +1142,41 @@
           "signupsEnd" : {
             "type" : "string"
           }
+        }
+      },
+      "GenericFailureResponse" : {
+        "type" : "object",
+        "x-examples" : {
+          "Example 1" : {
+            "success" : false,
+            "error" : "Cannot create a new season while there is an active season"
+          }
         },
-        "description" : ""
+        "required" : [ "success" ],
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "error" : {
+            "type" : "string"
+          }
+        }
+      },
+      "GenericSuccessResponse" : {
+        "type" : "object",
+        "x-examples" : {
+          "Example 1" : {
+            "success" : false,
+            "error" : "Cannot create a new season while there is an active season"
+          }
+        },
+        "title" : "GenericSuccessResponse",
+        "required" : [ "success" ],
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          }
+        }
       }
     },
     "securitySchemes" : {

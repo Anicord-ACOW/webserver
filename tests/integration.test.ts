@@ -111,7 +111,7 @@ describe("integration test", () => {
     it("doesn't allow non admins to create seasons", async () => {
         const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons`, {
-            method: "PUT",
+            method: "POST",
             headers: {
                 Authorization: token,
                 "Content-Type": "application/json",
@@ -131,7 +131,7 @@ describe("integration test", () => {
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         // signups before now
         const response = await fetch(`${baseUrl}/seasons`, {
-            method: "PUT",
+            method: "POST",
             headers: {
                 Authorization: token,
                 "Content-Type": "application/json",
@@ -146,7 +146,7 @@ describe("integration test", () => {
 
         // signup ends before starting
         const response2 = await fetch(`${baseUrl}/seasons`, {
-            method: "PUT",
+            method: "POST",
             headers: {
                 Authorization: token,
                 "Content-Type": "application/json",
@@ -163,7 +163,7 @@ describe("integration test", () => {
     it("allows admins to create seasons", async () => {
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons`, {
-            method: "PUT",
+            method: "POST",
             headers: {
                 Authorization: token,
                 "Content-Type": "application/json",
@@ -180,7 +180,7 @@ describe("integration test", () => {
     it("doesn't allow season creation if the season is already in progress", async () => {
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons`, {
-            method: "PUT",
+            method: "POST",
             headers: {
                 Authorization: token,
                 "Content-Type": "application/json",
