@@ -9,6 +9,7 @@ import swaggerDocument from "@/swagger.json";
 
 const app = express();
 
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 app.use(express.json({limit: "50kb"}));
 app.use(express.urlencoded({ extended: true, limit: "50kb" }));
 app.use(cookieParser(process.env.COOKIE_SECRET));
