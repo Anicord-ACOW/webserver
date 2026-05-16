@@ -11,6 +11,7 @@ export const ContractTypeSchema = defineEntity({
         id: p.bigint().primary(),
         season: () => p.manyToOne(Season).mapToPk().joinColumn("season").referenceColumnName("id"),
         name: p.string(),
+        slug: p.string().length(16),
         icon: p.string(),
         discordChannelId: p.string(),
 

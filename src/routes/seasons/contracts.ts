@@ -8,7 +8,7 @@ import {readRateLimiter, writeRateLimiter} from "@/helpers/rate-limit";
 
 const router = Router();
 
-router.put("/seasons/:id/contracts/contract-types", writeRateLimiter, requireAllRoles(["admin"]), async (req, res) => {
+router.post("/seasons/:id/contract-types", writeRateLimiter, requireAllRoles(["admin"]), async (req, res) => {
     // allow contract types to be added to a season as long as the season is not completed
     const season = await req.em.findOne(Season, req.params.id);
     if (season === null) throw new APIError(404, "Season not found");
@@ -26,7 +26,7 @@ router.put("/seasons/:id/contracts/contract-types", writeRateLimiter, requireAll
     res.json({success: true, contractType});
 });
 
-router.get("/seasons/:id/contracts/contract-types", readRateLimiter, async (req, res) => {
+router.get("/seasons/:id/contract-types", readRateLimiter, async (req, res) => {
     const contractTypes = await req.em.find(ContractTypeSchema, {season: req.params.id});
     res.json({success: true, contractTypes});
 });

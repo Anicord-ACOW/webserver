@@ -1,6 +1,6 @@
 import {type Server} from "node:http";
 import type {Express} from "express";
-import {afterAll, afterEach, beforeAll, describe, expect, it, vi} from "vitest";
+import {afterAll, beforeAll, describe, expect, it, vi} from "vitest";
 import {createAuthToken} from "@/helpers/auth-tokens";
 
 let server: Server;
@@ -329,6 +329,7 @@ describe("integration test", () => {
     it("allow users to signup during the signup period", async () => {
         vi.setSystemTime("2026-05-13T00:00:00.001Z");
 
+        // #2 signs up twice, we'll check for idempotency later
         const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons/1/signup`, {
             method: "POST",
@@ -358,6 +359,7 @@ describe("integration test", () => {
             success: true,
         });
 
+        // #1 and 3
         const token1 = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         const response3 = await fetch(`${baseUrl}/seasons/1/signup`, {
             method: "POST",
@@ -387,6 +389,24 @@ describe("integration test", () => {
         expect(body4).toMatchObject({
             success: true,
         });
+
+        // #4-6
+        for (let i = 4; i <= 6; ++i) {
+            const token_ = createAuthToken({sub: `${i}`}, {expiresIn: "1m"});
+            const response_ = await fetch(`${baseUrl}/seasons/1/signup`, {
+                method: "POST",
+                headers: {
+                    Authorization: token_,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+            });
+            const body_ = await response_.json();
+            expect(response_.status).toBe(200);
+            expect(body_).toMatchObject({
+                success: true,
+            });
+        }
     });
 
     it("allows users to remove signup during the signup period", async () => {
@@ -450,6 +470,7 @@ describe("integration test", () => {
         });
     });
 
+    // 1-6 all signed up initially, but 3 removed, so 5 signups left
     it("signups are idempotent", async () => {
         const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons/1/signups`, {
@@ -462,13 +483,13 @@ describe("integration test", () => {
         const body = await response.json();
         expect(body.signups.filter((x: any) => x.user.id === "2").length).toBe(1);
         expect(body.signups.filter((x: any) => x.user.id === "1").length).toBe(1);
-        expect(body.signups.length).toBe(2);
+        expect(body.signups.length).toBe(5);
     });
 
     it("doesn't allow users to change signup after the signup period", async () => {
         vi.setSystemTime("2026-05-14T00:00:00.001Z");
 
-        const token3 = createAuthToken({sub: "3"}, {expiresIn: "1m"});
+        const token3 = createAuthToken({sub: "4"}, {expiresIn: "1m"});
         const response = await fetch(`${baseUrl}/seasons/1/signup`, {
             method: "DELETE",
             headers: {
@@ -483,7 +504,7 @@ describe("integration test", () => {
             success: false,
         });
 
-        const token = createAuthToken({sub: "4"}, {expiresIn: "1m"});
+        const token = createAuthToken({sub: "3"}, {expiresIn: "1m"});
         const response2 = await fetch(`${baseUrl}/seasons/1/signup`, {
             method: "POST",
             headers: {
@@ -494,8 +515,105 @@ describe("integration test", () => {
         });
         const body2 = await response2.json();
         expect(response2.status).toBe(400);
-        expect(body).toMatchObject({
+        expect(body2).toMatchObject({
             success: false,
+        });
+    });
+
+    it("allows only admins to create contract types", async () => {
+        for (let i of [1, 2]) {
+            const token = createAuthToken({sub: `${i}`}, {expiresIn: "1m"});
+            const response = await fetch(`${baseUrl}/seasons/1/contract-types`, {
+                method: "POST",
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "Base Contract",
+                    slug: "base",
+                    icon: "kirby",
+                    discordChannelId: "1077741836749242468",
+
+                    assignmentStart: "2026-05-15T00:00:00.000Z",
+                    assignmentEnd: "2026-05-16T00:00:00.000Z",
+                    reviewDeadline: "2026-05-23T00:00:00.000Z",
+                })
+            });
+            const body = await response.json();
+            expect(response.status).toBe(i === 1 ? 200 : 403);
+            expect(body.success).toBe(i === 1);
+        }
+    });
+
+    it("doesn't allow inconsistent dates in contract types", async () => {
+        const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
+        const ranges = [
+            // starts in the past
+            {
+                assignmentStart: "2026-05-13T00:00:00.000Z",
+                assignmentEnd: "2026-05-16T00:00:00.000Z",
+                reviewDeadline: "2026-05-23T00:00:00.000Z",
+            },
+            // starts after end
+            {
+                assignmentStart: "2026-05-19T00:00:00.000Z",
+                assignmentEnd: "2026-05-16T00:00:00.000Z",
+                reviewDeadline: "2026-05-23T00:00:00.000Z",
+            },
+            // deadline before assignment
+            {
+                assignmentStart: "2026-05-13T00:00:00.000Z",
+                assignmentEnd: "2026-05-16T00:00:00.000Z",
+                reviewDeadline: "2026-05-15T00:00:00.000Z",
+            },
+        ];
+        for (let i of ranges) {
+            const response = await fetch(`${baseUrl}/seasons/1/contract-types`, {
+                method: "POST",
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "Dating Contract",
+                    slug: "dating",
+                    icon: "heart",
+                    discordChannelId: "1077741836749242468",
+
+                    ...i,
+                })
+            });
+            const body = await response.json();
+            expect(response.status).toBe(400);
+            expect(body.success).toBe(false);
+        }
+    });
+
+    it("returns correct contract types", async () => {
+        const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/contract-types`, {
+            method: "GET",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+        });
+        const body = await response.json();
+        expect(body).toMatchObject({
+            success: true,
+            contractTypes: [
+                {
+                    id: "1",
+                    name: "Base Contract",
+                    slug: "base",
+                    icon: "kirby",
+                    discordChannelId: "1077741836749242468",
+                    assignmentStart: "2026-05-15T00:00:00.000Z",
+                    assignmentEnd: "2026-05-16T00:00:00.000Z",
+                    reviewDeadline: "2026-05-23T00:00:00.000Z",
+                }
+            ]
         });
     });
 });
