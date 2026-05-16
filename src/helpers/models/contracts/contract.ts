@@ -12,9 +12,9 @@ export const ContractSchema = defineEntity({
     properties: {
         id: p.bigint().primary(),
         season: () => p.manyToOne(Season).mapToPk().joinColumn("season").referenceColumnName("id"),
-        contractor: () => p.manyToOne(User).mapToPk().joinColumn("contractor").referenceColumnName("id"),
-        contractee: () => p.manyToOne(User).mapToPk().joinColumn("contractee").referenceColumnName("id"),
-        contractType: () => p.manyToOne(ContractType).mapToPk().joinColumn("contract_type").referenceColumnName("id"),
+        contractor: () => p.manyToOne(User).joinColumn("contractor").referenceColumnName("id"),
+        contractee: () => p.manyToOne(User).joinColumn("contractee").referenceColumnName("id"),
+        contractType: () => p.manyToOne(ContractType).joinColumn("contract_type").referenceColumnName("id"),
 
         // the actual series/game/dish/etc to complete, eg "Shibouyugi (Anime)"
         name: p.string().default(""),

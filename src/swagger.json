@@ -956,6 +956,107 @@
           }
         }
       }
+    },
+    "/seasons/{seasonId}/contract-types/{slug}/contracts" : {
+      "parameters" : [ {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "seasonId",
+        "in" : "path",
+        "required" : true,
+        "description" : "season id, accepts \"current\""
+      }, {
+        "schema" : {
+          "type" : "string"
+        },
+        "name" : "slug",
+        "in" : "path",
+        "required" : true,
+        "description" : "contract type slug, accepts numeric id"
+      } ],
+      "post" : {
+        "summary" : "[Admin] Create contract",
+        "tags" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "success" : {
+                      "type" : "boolean",
+                      "x-stoplight" : {
+                        "id" : "ottap0auioo3y"
+                      }
+                    },
+                    "contract" : {
+                      "$ref" : "#/components/schemas/Contract"
+                    }
+                  }
+                },
+                "examples" : {
+                  "Example 1" : {
+                    "value" : {
+                      "success" : true,
+                      "contract" : {
+                        "id" : "5",
+                        "season" : "1",
+                        "contractor" : {
+                          "id" : "1",
+                          "username" : "admin1",
+                          "roles" : [ "Array" ],
+                          "createdAt" : "2026-05-16T19:57:23.000Z",
+                          "updatedAt" : "2026-05-16T19:57:23.000Z"
+                        },
+                        "contractee" : {
+                          "id" : "6",
+                          "username" : "user6",
+                          "roles" : [ ],
+                          "createdAt" : "2026-05-16T19:57:23.000Z",
+                          "updatedAt" : "2026-05-16T19:57:23.000Z"
+                        },
+                        "contractType" : {
+                          "id" : "1",
+                          "season" : "1",
+                          "name" : "Base Contract",
+                          "slug" : "base",
+                          "icon" : "kirby",
+                          "discordChannelId" : "1077741836749242468",
+                          "assignmentStart" : "2026-05-15T00:00:00.000Z",
+                          "assignmentEnd" : "2026-05-16T00:00:00.000Z",
+                          "reviewDeadline" : "2026-05-23T00:00:00.000Z",
+                          "createdAt" : "2026-05-14T00:00:00.000Z",
+                          "updatedAt" : "2026-05-14T00:00:00.000Z"
+                        },
+                        "name" : "",
+                        "progress" : "",
+                        "score" : "",
+                        "reviewContent" : "",
+                        "verdict" : "PENDING",
+                        "createdAt" : "2026-05-14T00:01:00.001Z",
+                        "updatedAt" : "2026-05-14T00:01:00.001Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId" : "post-seasons-seasonId-contract-types-slug-contracts",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ContractPostable"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -1402,6 +1503,104 @@
             "type" : "string"
           },
           "assignmentEnd" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ContractPostable" : {
+        "type" : "object",
+        "x-examples" : {
+          "Example 1" : {
+            "contractor" : "4",
+            "contractee" : "2"
+          }
+        },
+        "properties" : {
+          "contractor" : {
+            "type" : "string"
+          },
+          "contractee" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Contract" : {
+        "type" : "object",
+        "x-examples" : {
+          "Example 1" : {
+            "id" : "5",
+            "season" : "1",
+            "contractor" : {
+              "id" : "1",
+              "username" : "admin1",
+              "roles" : [ "Array" ],
+              "createdAt" : "2026-05-16T19:57:23.000Z",
+              "updatedAt" : "2026-05-16T19:57:23.000Z"
+            },
+            "contractee" : {
+              "id" : "6",
+              "username" : "user6",
+              "roles" : [ ],
+              "createdAt" : "2026-05-16T19:57:23.000Z",
+              "updatedAt" : "2026-05-16T19:57:23.000Z"
+            },
+            "contractType" : {
+              "id" : "1",
+              "season" : "1",
+              "name" : "Base Contract",
+              "slug" : "base",
+              "icon" : "kirby",
+              "discordChannelId" : "1077741836749242468",
+              "assignmentStart" : "2026-05-15T00:00:00.000Z",
+              "assignmentEnd" : "2026-05-16T00:00:00.000Z",
+              "reviewDeadline" : "2026-05-23T00:00:00.000Z",
+              "createdAt" : "2026-05-14T00:00:00.000Z",
+              "updatedAt" : "2026-05-14T00:00:00.000Z"
+            },
+            "name" : "",
+            "progress" : "",
+            "score" : "",
+            "reviewContent" : "",
+            "verdict" : "PENDING",
+            "createdAt" : "2026-05-14T00:01:00.001Z",
+            "updatedAt" : "2026-05-14T00:01:00.001Z"
+          }
+        },
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "season" : {
+            "type" : "string"
+          },
+          "contractor" : {
+            "$ref" : "#/components/schemas/User"
+          },
+          "contractee" : {
+            "$ref" : "#/components/schemas/User"
+          },
+          "contractType" : {
+            "$ref" : "#/components/schemas/ContractType"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "progress" : {
+            "type" : "string"
+          },
+          "score" : {
+            "type" : "string"
+          },
+          "reviewContent" : {
+            "type" : "string"
+          },
+          "verdict" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
             "type" : "string"
           }
         }

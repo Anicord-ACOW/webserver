@@ -616,4 +616,85 @@ describe("integration test", () => {
             ]
         });
     });
+
+    it("allows admins to create contracts", async () => {
+        // this is to get around the rate limit
+        vi.setSystemTime("2026-05-14T00:01:00.001Z");
+        const pairs = [[6, 5], [5, 4], [4, 2], [2, 1], [1, 6]];
+        const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
+
+        for (let pair of pairs) {
+            const response = await fetch(`${baseUrl}/seasons/1/contract-types/base/contracts`, {
+                method: "POST",
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    contractor: pair[0],
+                    contractee: pair[1],
+                }),
+            });
+            const body = await response.json();
+            console.log(body);
+            expect(response.status).toBe(200);
+            expect(body).toMatchObject({
+                success: true,
+                contract: {
+                    season: "1",
+                    contractType: {
+                        slug: "base",
+                    },
+                    contractor: {id: pair[0].toString()},
+                    contractee: {id: pair[1].toString()},
+                }
+            });
+        }
+    });
+
+    it("doesn't allow non admins to create contracts", async () => {
+        const token = createAuthToken({sub: "2"}, {expiresIn: "1m"});
+        const response = await fetch(`${baseUrl}/seasons/1/contract-types/base/contracts`, {
+            method: "POST",
+            headers: {
+                Authorization: token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                contractor: 4,
+                contractee: 2,
+            }),
+        });
+        const body = await response.json();
+        expect(response.status).toBe(403);
+        expect(body).toMatchObject({
+            success: false,
+        });
+    });
+
+    it("validates contract parties correctly", async () => {
+        const token = createAuthToken({sub: "1"}, {expiresIn: "1m"});
+
+        // contractor is not signed up, -ee is not signed up, same participant
+        const pairs = [[3, 2], [2, 3], [2, 2]];
+        for (let pair of pairs) {
+            const response = await fetch(`${baseUrl}/seasons/1/contract-types/base/contracts`, {
+                method: "POST",
+                headers: {
+                    Authorization: token,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    contractor: pair[0],
+                    contractee: pair[1],
+                }),
+            });
+            const body = await response.json();
+            expect(response.status).toBe(400);
+            expect(body).toMatchObject({
+                success: false,
+                error: pair[0] !== pair[1] ? "Both contractor and contractee must be signed up" : "Contractor and contractee must be distinct",
+            });
+        }
+    });
 });
