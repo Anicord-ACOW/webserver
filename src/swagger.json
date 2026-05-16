@@ -664,12 +664,12 @@
         }
       }
     },
-    "/seasons/{seasonid}/signup" : {
+    "/seasons/{seasonId}/signup" : {
       "parameters" : [ {
         "schema" : {
           "type" : "string"
         },
-        "name" : "seasonid",
+        "name" : "seasonId",
         "in" : "path",
         "required" : true
       } ],
@@ -764,12 +764,12 @@
         "description" : "Duplicate operations are idempotent."
       }
     },
-    "/seasons/{seasonid}/signups" : {
+    "/seasons/{seasonId}/signups" : {
       "parameters" : [ {
         "schema" : {
           "type" : "string"
         },
-        "name" : "seasonid",
+        "name" : "seasonId",
         "in" : "path",
         "required" : true
       } ],
