@@ -1,4 +1,5 @@
 import type {EntityProperty, EntitySchema} from "@mikro-orm/core";
+import {EntitySchema as MikroEntitySchema} from "@mikro-orm/core";
 import {z} from "zod";
 import {APIError} from "@/helpers/api-error";
 
@@ -6,6 +7,7 @@ type ModelPatchOptions = {
     exclude?: readonly string[];
     excludeManagedFields?: boolean;
     excludeForeignKeyFields?: boolean;
+    partial?: boolean;
 };
 
 function propertyMatchesName(prop: EntityProperty, names: Set<string>) {
@@ -41,6 +43,50 @@ function inferRuntimeType(prop: EntityProperty) {
     return undefined;
 }
 
+function relationTargetSchema(prop: EntityProperty) {
+    if (typeof prop.entity !== "function") return null;
+
+    const target = prop.entity();
+    if (MikroEntitySchema.is(target)) return target;
+
+    return MikroEntitySchema.REGISTRY.get(target) ?? null;
+}
+
+function zodForRelationProperty(prop: EntityProperty): z.ZodType | null {
+    const targetSchema = relationTargetSchema(prop);
+    if (!targetSchema) return null;
+    const targetPk = Object.entries(targetSchema.meta.properties).filter(([, v]) => v.primary);
+    if (targetPk.length === 0) return null;
+
+    if (targetPk.length === 1) {
+        const [targetPkName, targetPkProp] = targetPk[0] as [string, EntityProperty];
+        return zodForProperty({
+            ...targetPkProp,
+            name: targetPkProp.name ?? targetPkName,
+            nullable: prop.nullable,
+        });
+    }
+
+    // this is here for fun as it's unlikely to work in the db since you can't stuff 2 fields in 1
+    /*
+    const shape: Record<string, z.ZodType> = {};
+    for (const [targetPkName, targetPkProp] of targetPk as [string, EntityProperty][]) {
+        const pkProp = {
+            ...targetPkProp,
+            name: targetPkProp.name ?? targetPkName,
+            nullable: false,
+        };
+        const pkSchema = zodForProperty(pkProp);
+        if (!pkSchema) return null;
+        shape[pkProp.name] = pkSchema;
+    }
+
+    const schema = z.object(shape).strict();
+    return prop.nullable ? schema.nullable() : schema;
+    */
+    return null;
+}
+
 function zodForEnumProperty(prop: EntityProperty) {
     if (!Array.isArray(prop.items)) return null;
 
@@ -48,7 +94,7 @@ function zodForEnumProperty(prop: EntityProperty) {
     return prop.array ? z.array(itemSchema) : itemSchema;
 }
 
-function zodForProperty(prop: EntityProperty) {
+function zodForScalarProperty(prop: EntityProperty) {
     let schema: z.ZodType;
 
     if (prop.kind !== undefined && prop.kind !== "scalar" && !prop.mapToPk) {
@@ -106,6 +152,14 @@ function zodForProperty(prop: EntityProperty) {
     return prop.nullable ? schema.nullable() : schema;
 }
 
+function zodForProperty(prop: EntityProperty): z.ZodType | null {
+    if (prop.kind !== undefined && prop.kind !== "scalar") {
+        return zodForRelationProperty(prop);
+    }
+
+    return zodForScalarProperty(prop);
+}
+
 function firstIssueMessage(error: z.ZodError) {
     const issue = error.issues[0];
     if (!issue) return "Invalid request body";
@@ -138,7 +192,13 @@ export function parseModelPatch<TEntity extends object>(
         if (propSchema) shape[prop.name] = propSchema;
     }
 
-    const patchSchema = z.object(shape).partial().strict();
+    // const patchSchema = z.object(shape).strict();
+    let patchSchema;
+    if (options.partial === false) {
+        patchSchema = z.object(shape).strict();
+    } else {
+        patchSchema = z.object(shape).partial().strict();
+    }
     const result = patchSchema.safeParse(body);
     if (!result.success) throw new APIError(400, firstIssueMessage(result.error));
 
